@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { UsersService } from './users.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -25,6 +27,12 @@ export class UsersController {
   @Roles(Role.ADMIN)
   findAll() {
     return this.users.findAll();
+  }
+
+  @Post()
+  @Roles(Role.ADMIN)
+  create(@Body() dto: CreateUserDto) {
+    return this.users.create(dto);
   }
 
   @Get(':id')
