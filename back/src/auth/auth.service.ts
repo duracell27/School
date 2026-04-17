@@ -56,6 +56,7 @@ export class AuthService {
 
   async logout(userId: string, res: Response) {
     await this.users.updateRefreshToken(userId, null);
+    res.clearCookie('access_token');
     res.clearCookie('refresh_token');
     return { message: 'Logged out successfully' };
   }
@@ -105,10 +106,19 @@ export class AuthService {
     const hashed = await bcrypt.hash(newRefreshToken, 10);
     await this.users.updateRefreshToken(userId, hashed);
 
-    res.cookie('refresh_token', newRefreshToken, {
+    const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'strict' as const,
+    };
+
+    res.cookie('access_token', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', newRefreshToken, {
+      ...cookieOptions,
       maxAge: 14 * 24 * 60 * 60 * 1000,
     });
 
