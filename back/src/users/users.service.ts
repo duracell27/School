@@ -4,7 +4,9 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 const userSelect = {
@@ -30,12 +32,22 @@ export class UsersService {
       where: { id },
       select: userSelect,
     });
-    if (!user) throw new NotFoundException(`User ${id} not found`);
+    if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
   findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async create(dto: CreateUserDto) {
+    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (existing) throw new ConflictException('Email already in use');
+    const password = await bcrypt.hash(dto.password, 10);
+    return this.prisma.user.create({
+      data: { ...dto, password },
+      select: userSelect,
+    });
   }
 
   async update(id: string, dto: UpdateUserDto) {
@@ -48,9 +60,14 @@ export class UsersService {
         throw new ConflictException('Email already in use');
       }
     }
+    const { password, ...rest } = dto;
+    const data: Prisma.UserUpdateInput = { ...rest };
+    if (password) {
+      data.password = await bcrypt.hash(password, 10);
+    }
     return this.prisma.user.update({
       where: { id },
-      data: dto,
+      data,
       select: userSelect,
     });
   }
@@ -60,10 +77,11 @@ export class UsersService {
     await this.prisma.user.delete({ where: { id } });
   }
 
-  updateRefreshToken(id: string, refreshToken: string | null) {
-    return this.prisma.user.update({
-      where: { id },
-      data: { refreshToken },
-    });
+  async updateRefreshToken(id: string, refreshToken: string | null) {
+    try {
+      await this.prisma.user.update({ where: { id }, data: { refreshToken } });
+    } catch {
+      throw new NotFoundException('User not found');
+    }
   }
 }

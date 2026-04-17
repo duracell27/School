@@ -3,6 +3,14 @@ import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('hashed-password'),
+  compare: jest.fn().mockResolvedValue(true),
+}));
+
+const bcryptMock = bcrypt as jest.Mocked<typeof bcrypt>;
 
 const mockUser = {
   id: 'cuid1',
@@ -18,6 +26,7 @@ const prismaMock = {
   user: {
     findMany: jest.fn(),
     findUnique: jest.fn(),
+    create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
   },
@@ -56,6 +65,35 @@ describe('UsersService', () => {
     });
   });
 
+  describe('create', () => {
+    it('hashes password and creates user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+      prismaMock.user.create.mockResolvedValue(mockUser);
+
+      const result = await service.create({
+        email: 'new@example.com',
+        name: 'New User',
+        password: 'password123',
+        role: Role.TEACHER,
+      });
+
+      expect(bcryptMock.hash).toHaveBeenCalledWith('password123', 10);
+      expect(result).toEqual(mockUser);
+    });
+
+    it('throws ConflictException when email already exists', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(mockUser);
+      await expect(
+        service.create({
+          email: 'teacher@example.com',
+          name: 'Dup',
+          password: 'password123',
+          role: Role.TEACHER,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
   describe('update', () => {
     it('updates and returns the user', async () => {
       prismaMock.user.findUnique.mockResolvedValueOnce(mockUser);
@@ -84,6 +122,30 @@ describe('UsersService', () => {
       await expect(
         service.update('cuid1', { email: mockUser.email }),
       ).resolves.toBeDefined();
+    });
+
+    it('hashes password when provided in update', async () => {
+      prismaMock.user.findUnique.mockResolvedValueOnce(mockUser);
+      prismaMock.user.update.mockResolvedValue(mockUser);
+      bcryptMock.hash.mockResolvedValue('new-hashed' as any);
+
+      await service.update('cuid1', { password: 'newpassword123' });
+
+      expect(bcryptMock.hash).toHaveBeenCalledWith('newpassword123', 10);
+      expect(prismaMock.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ password: 'new-hashed' }),
+        }),
+      );
+    });
+
+    it('does not call hash when password is not provided', async () => {
+      prismaMock.user.findUnique.mockResolvedValueOnce(mockUser);
+      prismaMock.user.update.mockResolvedValue(mockUser);
+
+      await service.update('cuid1', { name: 'Only Name' });
+
+      expect(bcryptMock.hash).not.toHaveBeenCalled();
     });
   });
 
