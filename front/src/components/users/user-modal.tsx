@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -49,6 +49,7 @@ interface UserModalProps {
 
 export function UserModal({ open, onClose, user }: UserModalProps) {
   const isEdit = !!user;
+  const [submitError, setSubmitError] = useState('');
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
 
@@ -65,6 +66,7 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
   });
 
   useEffect(() => {
+    setSubmitError('');
     if (user) {
       reset({ name: user.name, email: user.email, password: '', role: user.role });
     } else {
@@ -87,7 +89,7 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
       }
       onClose();
     } catch (e) {
-      console.error(e);
+      setSubmitError(e instanceof Error ? e.message : 'Something went wrong');
     }
   }
 
@@ -136,6 +138,9 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
               </SelectContent>
             </Select>
           </div>
+          {submitError && (
+            <p className="text-sm text-red-500">{submitError}</p>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel

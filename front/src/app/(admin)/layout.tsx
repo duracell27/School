@@ -29,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => {
         router.replace('/login');
       });
-  }, []);
+  }, [router, setUser]);
 
   if (loading) {
     return (

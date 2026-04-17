@@ -77,11 +77,7 @@ export class UsersService {
     await this.prisma.user.delete({ where: { id } });
   }
 
-  async updateRefreshToken(id: string, refreshToken: string | null) {
-    try {
-      await this.prisma.user.update({ where: { id }, data: { refreshToken } });
-    } catch {
-      throw new NotFoundException('User not found');
-    }
+  updateRefreshToken(id: string, refreshToken: string | null) {
+    return this.prisma.user.update({ where: { id }, data: { refreshToken } });
   }
 }

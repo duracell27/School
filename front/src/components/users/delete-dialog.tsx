@@ -41,9 +41,10 @@ export function DeleteDialog({ open, onClose, user }: DeleteDialogProps) {
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
+            disabled={deleteUser.isPending}
             className="bg-red-600 hover:bg-red-700"
           >
-            Delete
+            {deleteUser.isPending ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

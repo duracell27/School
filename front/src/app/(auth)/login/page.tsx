@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+const BASE_URL = 'http://localhost:3001';
+
 const schema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(8, 'Minimum 8 characters'),
@@ -26,7 +28,7 @@ export default function LoginPage() {
 
   async function onSubmit(data: FormValues) {
     setError('');
-    const res = await fetch('http://localhost:3001/auth/login', {
+    const res = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

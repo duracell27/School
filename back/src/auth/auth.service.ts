@@ -120,6 +120,7 @@ export class AuthService {
     res.cookie('refresh_token', newRefreshToken, {
       ...cookieOptions,
       maxAge: 14 * 24 * 60 * 60 * 1000,
+      path: '/auth/refresh',
     });
 
     return { access_token: accessToken, user: userData };
