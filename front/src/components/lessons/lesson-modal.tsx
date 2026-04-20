@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { ChildSelect } from '@/components/shared/child-select';
+import { TeacherSelect } from '@/components/shared/teacher-select';
 import { useCreateLesson, useUpdateLesson, usePriceSuggestion } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
@@ -137,18 +139,12 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Учень</Label>
-              <Select value={childId} onValueChange={(v) => setChildId(v ?? '')}>
-                <SelectTrigger><SelectValue>{children.find((c) => c.id === childId)?.name ?? 'Оберіть учня'}</SelectValue></SelectTrigger>
-                <SelectContent>{children.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-              </Select>
+              <ChildSelect children={children} value={childId} onChange={setChildId} />
             </div>
             <div className="space-y-1">
               <Label>Вчитель</Label>
               {isAdmin ? (
-                <Select value={teacherId} onValueChange={(v) => setTeacherId(v ?? '')}>
-                  <SelectTrigger><SelectValue>{users.find((u) => u.id === teacherId)?.name ?? 'Оберіть вчителя'}</SelectValue></SelectTrigger>
-                  <SelectContent>{users.map((u) => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}</SelectContent>
-                </Select>
+                <TeacherSelect users={users} value={teacherId} onChange={setTeacherId} />
               ) : (
                 <Input value={currentUser?.name ?? ''} disabled />
               )}
