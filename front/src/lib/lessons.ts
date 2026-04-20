@@ -50,10 +50,12 @@ export function usePriceSuggestion(
 ) {
   return useQuery({
     queryKey: ['price-suggestion', childId, teacherId, startDate],
-    queryFn: () =>
-      apiFetch<number | null>(
+    queryFn: async () => {
+      const result = await apiFetch<number | null>(
         `/lessons/price-suggestion?childId=${childId}&teacherId=${teacherId}&startDate=${encodeURIComponent(startDate!)}`,
-      ),
+      );
+      return result ?? null;
+    },
     enabled: !!(childId && teacherId && startDate),
   });
 }
