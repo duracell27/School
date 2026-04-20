@@ -13,8 +13,11 @@ interface RefreshResponse {
 }
 
 const navItems = [
+  { href: '/dashboard', label: 'Дашборд' },
   { href: '/users', label: 'Користувачі' },
   { href: '/children', label: 'Діти' },
+  { href: '/lessons', label: 'Уроки' },
+  { href: '/lesson-prices', label: 'Вартість заняття' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
