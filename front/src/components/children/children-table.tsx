@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -9,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, UserMinus } from 'lucide-react';
+import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from './child-avatar';
 import { getCountry } from '@/lib/countries';
 import type { Child } from '@/types/child';
@@ -67,11 +68,32 @@ function getTimezoneInfo(tzOffset: string): { time: string; date: string | null 
 }
 
 export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps) {
+  const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>(null);
+
+  const sorted = [...children].sort((a, b) => {
+    if (!sortDir) return 0;
+    const cmp = a.name.localeCompare(b.name, 'uk');
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  function toggleSort() {
+    setSortDir((d) => (d === 'asc' ? 'desc' : d === 'desc' ? null : 'asc'));
+  }
+
+  const SortIcon = sortDir === 'asc' ? ArrowUp : sortDir === 'desc' ? ArrowDown : ArrowUpDown;
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Ім'я</TableHead>
+          <TableHead>
+            <button
+              onClick={toggleSort}
+              className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+            >
+              Ім'я <SortIcon size={13} />
+            </button>
+          </TableHead>
           <TableHead>Вік</TableHead>
           <TableHead>Країна</TableHead>
           <TableHead>Таймзона</TableHead>
@@ -82,7 +104,7 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
         </TableRow>
       </TableHeader>
       <TableBody>
-        {children.map((child) => {
+        {sorted.map((child) => {
           const country = getCountry(child.country);
           const tzInfo = getTimezoneInfo(child.timezone);
           return (
