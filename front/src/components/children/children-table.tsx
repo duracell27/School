@@ -21,6 +21,9 @@ interface ChildrenTableProps {
   onDelete: (child: Child) => void;
 }
 
+type SortKey = 'name' | 'age' | 'country' | 'teacher' | 'hireDate';
+type SortDir = 'asc' | 'desc' | null;
+
 function formatDate(date: string | null) {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('uk-UA');
@@ -41,15 +44,11 @@ function getUkraineOffset(): number {
   return m ? parseInt(m[1]) : 2;
 }
 
-function getTimezoneInfo(tzOffset: string): { time: string; date: string | null } | null {
+function getTimezoneInfo(tzOffset: string): { time: string; date: string | null } {
   const offset = parseInt(tzOffset, 10);
-  if (isNaN(offset)) return null;
-
   const uaOffset = getUkraineOffset();
-  if (offset === uaOffset) return null;
-
   const now = new Date();
-  const utcMs = now.getTime(); // getTime() вже UTC
+  const utcMs = now.getTime();
 
   const childDate = new Date(utcMs + offset * 3600000);
   const uaDate = new Date(utcMs + uaOffset * 3600000);
@@ -67,39 +66,99 @@ function getTimezoneInfo(tzOffset: string): { time: string; date: string | null 
   return { time, date: dateLabel };
 }
 
-export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps) {
-  const [sortDir, setSortDir] = useState<'asc' | 'desc' | null>(null);
-
-  const sorted = [...children].sort((a, b) => {
-    if (!sortDir) return 0;
-    const cmp = a.name.localeCompare(b.name, 'uk');
-    return sortDir === 'asc' ? cmp : -cmp;
+function sortChildren(list: Child[], key: SortKey, dir: SortDir): Child[] {
+  if (!dir) return list;
+  return [...list].sort((a, b) => {
+    let cmp = 0;
+    switch (key) {
+      case 'name':
+        cmp = a.name.localeCompare(b.name, 'uk');
+        break;
+      case 'age':
+        cmp = a.age - b.age;
+        break;
+      case 'country': {
+        const ca = getCountry(a.country)?.name ?? a.country;
+        const cb = getCountry(b.country)?.name ?? b.country;
+        cmp = ca.localeCompare(cb, 'uk');
+        break;
+      }
+      case 'teacher': {
+        const ta = a.teacher?.name ?? '';
+        const tb = b.teacher?.name ?? '';
+        cmp = ta.localeCompare(tb, 'uk');
+        break;
+      }
+      case 'hireDate':
+        cmp = (a.hireDate ?? '').localeCompare(b.hireDate ?? '');
+        break;
+    }
+    return dir === 'asc' ? cmp : -cmp;
   });
+}
 
-  function toggleSort() {
-    setSortDir((d) => (d === 'asc' ? 'desc' : d === 'desc' ? null : 'asc'));
+function SortButton({
+  label,
+  colKey,
+  activeKey,
+  dir,
+  onToggle,
+}: {
+  label: string;
+  colKey: SortKey;
+  activeKey: SortKey | null;
+  dir: SortDir;
+  onToggle: (key: SortKey) => void;
+}) {
+  const isActive = activeKey === colKey;
+  const Icon = isActive && dir === 'asc' ? ArrowUp : isActive && dir === 'desc' ? ArrowDown : ArrowUpDown;
+  return (
+    <button
+      onClick={() => onToggle(colKey)}
+      className={`flex items-center gap-1 transition-colors hover:text-gray-900 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
+    >
+      {label} <Icon size={13} />
+    </button>
+  );
+}
+
+export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+
+  function handleSort(key: SortKey) {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir('asc');
+    } else {
+      setSortDir((d) => (d === 'asc' ? 'desc' : d === 'desc' ? null : 'asc'));
+      if (sortDir === 'desc') setSortKey(null);
+    }
   }
 
-  const SortIcon = sortDir === 'asc' ? ArrowUp : sortDir === 'desc' ? ArrowDown : ArrowUpDown;
+  const sorted = sortKey ? sortChildren(children, sortKey, sortDir) : children;
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>
-            <button
-              onClick={toggleSort}
-              className="flex items-center gap-1 hover:text-gray-900 transition-colors"
-            >
-              Ім'я <SortIcon size={13} />
-            </button>
+            <SortButton label="Ім'я" colKey="name" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
           </TableHead>
-          <TableHead>Вік</TableHead>
-          <TableHead>Країна</TableHead>
+          <TableHead>
+            <SortButton label="Вік" colKey="age" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+          </TableHead>
+          <TableHead>
+            <SortButton label="Країна" colKey="country" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+          </TableHead>
           <TableHead>Таймзона</TableHead>
-          <TableHead>Вчитель</TableHead>
+          <TableHead>
+            <SortButton label="Вчитель" colKey="teacher" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+          </TableHead>
           <TableHead>Батьки</TableHead>
-          <TableHead>Дата</TableHead>
+          <TableHead>
+            <SortButton label="Дата" colKey="hireDate" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+          </TableHead>
           <TableHead className="text-right">Дії</TableHead>
         </TableRow>
       </TableHeader>
@@ -124,14 +183,12 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
               <TableCell>
                 <div className="flex flex-col gap-0.5">
                   <span>{child.timezone}</span>
-                  {tzInfo && (
-                    <span className="text-xs text-gray-500">
-                      {tzInfo.time}
-                      {tzInfo.date && (
-                        <span className="ml-1 text-orange-500">{tzInfo.date}</span>
-                      )}
-                    </span>
-                  )}
+                  <span className="text-xs text-gray-500">
+                    {tzInfo.time}
+                    {tzInfo.date && (
+                      <span className="ml-1 text-orange-500">{tzInfo.date}</span>
+                    )}
+                  </span>
                 </div>
               </TableCell>
               <TableCell>
