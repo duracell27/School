@@ -9,8 +9,8 @@ import { LessonQueryDto } from './dto/lesson-query.dto';
 
 const lessonSelect = {
   id: true,
-  child: { select: { id: true, name: true } },
-  teacher: { select: { id: true, name: true } },
+  child: { select: { id: true, name: true, avatar: true } },
+  teacher: { select: { id: true, name: true, avatar: true } },
   status: true,
   startDate: true,
   endDate: true,

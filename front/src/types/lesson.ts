@@ -3,11 +3,13 @@ export type LessonStatus = 'PLANNED' | 'CONDUCTED' | 'CANCELLED' | 'RESCHEDULED'
 export interface LessonChild {
   id: string;
   name: string;
+  avatar: string | null;
 }
 
 export interface LessonTeacher {
   id: string;
   name: string;
+  avatar: string | null;
 }
 
 export interface Lesson {

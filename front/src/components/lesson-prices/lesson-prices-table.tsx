@@ -4,6 +4,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { ChildAvatar } from '@/components/children/child-avatar';
+import { UserAvatar } from '@/components/users/user-avatar';
 import type { LessonPrice } from '@/types/lesson';
 
 interface LessonPricesTableProps {
@@ -27,8 +29,18 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
       <TableBody>
         {prices.map((p) => (
           <TableRow key={p.id}>
-            <TableCell className="font-medium">{p.child.name}</TableCell>
-            <TableCell>{p.teacher.name}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <ChildAvatar name={p.child.name} avatar={p.child.avatar} size={28} />
+                <span className="font-medium">{p.child.name}</span>
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <UserAvatar name={p.teacher.name} avatar={p.teacher.avatar} size={28} />
+                <span>{p.teacher.name}</span>
+              </div>
+            </TableCell>
             <TableCell>{Number(p.price).toLocaleString('uk-UA')}</TableCell>
             <TableCell>{new Date(p.effectiveDate).toLocaleDateString('uk-UA')}</TableCell>
             <TableCell className="text-right space-x-2">
