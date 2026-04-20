@@ -26,7 +26,10 @@ export default function UsersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Користувачі</h2>
+        <h2 className="text-xl font-semibold">
+          Користувачі{' '}
+          <span className="text-sm font-normal text-gray-400">({users.length})</span>
+        </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>
           + Створити користувача
         </Button>

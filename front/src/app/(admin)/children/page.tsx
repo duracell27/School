@@ -26,7 +26,10 @@ export default function ChildrenPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Діти</h2>
+        <h2 className="text-xl font-semibold">
+          Діти{' '}
+          <span className="text-sm font-normal text-gray-400">({children.length})</span>
+        </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>
           + Додати дитину
         </Button>

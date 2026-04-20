@@ -30,45 +30,36 @@ function toTelegramHref(phone: string): string {
   return `https://t.me/+${digits}`;
 }
 
-// Ukraine uses Europe/Kyiv (UTC+2 winter / UTC+3 summer)
-const UKRAINE_TZ = 'Europe/Kyiv';
+function getUkraineOffset(): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Kyiv',
+    timeZoneName: 'shortOffset',
+  }).formatToParts(new Date());
+  const raw = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT+2';
+  const m = raw.match(/GMT([+-]\d+)/);
+  return m ? parseInt(m[1]) : 2;
+}
 
 function getTimezoneInfo(tzOffset: string): { time: string; date: string | null } | null {
   const offset = parseInt(tzOffset, 10);
   if (isNaN(offset)) return null;
 
-  const now = new Date();
-
-  // Current time in Ukraine
-  const uaFormatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: UKRAINE_TZ,
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  });
-  const uaDateStr = uaFormatter.format(now); // YYYY-MM-DD
-
-  // Current Ukraine UTC offset in hours
-  const uaOffsetMin = -new Date(
-    new Date().toLocaleString('en-US', { timeZone: UKRAINE_TZ })
-  ).getTimezoneOffset();
-  const uaOffset = Math.round(uaOffsetMin / 60);
-
-  // If this child is in Ukraine's current offset, skip
+  const uaOffset = getUkraineOffset();
   if (offset === uaOffset) return null;
 
-  // Compute local time for the child's offset
+  const now = new Date();
   const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
-  const childMs = utcMs + offset * 3600000;
-  const childDate = new Date(childMs);
+
+  const childDate = new Date(utcMs + offset * 3600000);
+  const uaDate = new Date(utcMs + uaOffset * 3600000);
 
   const time = childDate.toLocaleTimeString('uk-UA', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
+    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
   });
 
-  // Compare calendar dates (YYYY-MM-DD)
-  const childDateStr = childDate.toLocaleDateString('en-CA', { timeZone: 'UTC' });
-  const dateLabel = childDateStr !== uaDateStr
+  const childDay = childDate.toLocaleDateString('en-CA', { timeZone: 'UTC' });
+  const uaDay = uaDate.toLocaleDateString('en-CA', { timeZone: 'UTC' });
+  const dateLabel = childDay !== uaDay
     ? childDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', timeZone: 'UTC' })
     : null;
 
@@ -121,7 +112,15 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
                   )}
                 </div>
               </TableCell>
-              <TableCell>{child.teacher?.name ?? '—'}</TableCell>
+              <TableCell>
+                {child.teacher ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+                    {child.teacher.name}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </TableCell>
               <TableCell>
                 <div className="flex flex-col gap-0.5 text-xs text-gray-600">
                   {child.parentContacts.length === 0 ? (
