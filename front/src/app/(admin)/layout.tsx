@@ -14,6 +14,7 @@ interface RefreshResponse {
 
 const navItems = [
   { href: '/users', label: 'Користувачі' },
+  { href: '/children', label: 'Діти' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
