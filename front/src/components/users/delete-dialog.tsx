@@ -32,19 +32,19 @@ export function DeleteDialog({ open, onClose, user }: DeleteDialogProps) {
     <AlertDialog open={open} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete {user?.name}?</AlertDialogTitle>
+          <AlertDialogTitle>Видалити {user?.name}?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. The user will be permanently removed.
+            Цю дію неможливо скасувати. Користувача буде видалено назавжди.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Скасувати</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             disabled={deleteUser.isPending}
             className="bg-red-600 hover:bg-red-700"
           >
-            {deleteUser.isPending ? 'Deleting...' : 'Delete'}
+            {deleteUser.isPending ? 'Видалення...' : 'Видалити'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

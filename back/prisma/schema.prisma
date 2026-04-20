@@ -11,14 +11,22 @@ enum Role {
   TEACHER
 }
 
+enum EmploymentStatus {
+  WORKING
+  FIRED
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  password     String
-  role         Role     @default(TEACHER)
-  avatar       String?
-  refreshToken String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String           @id @default(cuid())
+  email            String           @unique
+  name             String
+  password         String
+  role             Role             @default(TEACHER)
+  avatar           String?
+  status           EmploymentStatus @default(WORKING)
+  hireDate         DateTime?
+  terminationDate  DateTime?
+  refreshToken     String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }

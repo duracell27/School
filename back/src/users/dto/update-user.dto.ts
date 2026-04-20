@@ -1,5 +1,5 @@
-import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
-import { Role } from '@prisma/client';
+import { IsDateString, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { Role, EmploymentStatus } from '@prisma/client';
 
 export class UpdateUserDto {
   @IsString()
@@ -22,4 +22,16 @@ export class UpdateUserDto {
   @MinLength(8)
   @IsOptional()
   password?: string;
+
+  @IsEnum(EmploymentStatus)
+  @IsOptional()
+  status?: EmploymentStatus;
+
+  @IsDateString()
+  @IsOptional()
+  hireDate?: string;
+
+  @IsDateString()
+  @IsOptional()
+  terminationDate?: string;
 }

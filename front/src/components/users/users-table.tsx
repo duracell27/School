@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from './user-avatar';
+import { UserPlus, UserMinus } from 'lucide-react';
 import type { User } from '@/types/user';
 
 interface UsersTableProps {
@@ -18,49 +20,70 @@ interface UsersTableProps {
   onDelete: (user: User) => void;
 }
 
+function formatDate(date: string | null) {
+  if (!date) return '—';
+  return new Date(date).toLocaleDateString('uk-UA');
+}
+
 export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Role</TableHead>
-          <TableHead>Created</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead>Ім'я</TableHead>
+          <TableHead>Електронна пошта</TableHead>
+          <TableHead>Роль</TableHead>
+          <TableHead>Статус</TableHead>
+          <TableHead>Дата</TableHead>
+          <TableHead className="text-right">Дії</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {users.map((user) => (
           <TableRow key={user.id}>
-            <TableCell className="font-medium">{user.name}</TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2.5">
+                <UserAvatar name={user.name} avatar={user.avatar} size={32} />
+                <span className="font-medium">{user.name}</span>
+              </div>
+            </TableCell>
             <TableCell>{user.email}</TableCell>
             <TableCell>
               <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                {user.role}
+                {user.role === 'ADMIN' ? 'Адмін' : 'Вчитель'}
               </Badge>
             </TableCell>
             <TableCell>
-              {new Date(user.createdAt).toLocaleDateString('uk-UA')}
+              <Badge variant={user.status === 'WORKING' ? 'default' : 'destructive'}>
+                {user.status === 'WORKING' ? 'Працює' : 'Звільнений'}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              <div className="flex flex-col gap-1 text-sm">
+                <span className="flex items-center gap-1.5 text-green-600">
+                  <UserPlus size={13} />
+                  {formatDate(user.hireDate)}
+                </span>
+                <span className="flex items-center gap-1.5 text-red-500">
+                  <UserMinus size={13} />
+                  {formatDate(user.terminationDate)}
+                </span>
+              </div>
             </TableCell>
             <TableCell className="text-right space-x-2">
               <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
-                Edit
+                Редагувати
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => onDelete(user)}
-              >
-                Delete
+              <Button variant="destructive" size="sm" onClick={() => onDelete(user)}>
+                Видалити
               </Button>
             </TableCell>
           </TableRow>
         ))}
         {users.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-gray-400 py-8">
-              No users found
+            <TableCell colSpan={6} className="text-center text-gray-400 py-8">
+              Користувачів не знайдено
             </TableCell>
           </TableRow>
         )}

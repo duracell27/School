@@ -33,3 +33,5 @@ lerna-debug.log*
 
 # NestJS
 *.js.map
+
+/generated/prisma

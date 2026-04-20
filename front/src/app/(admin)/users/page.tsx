@@ -20,15 +20,15 @@ export default function UsersPage() {
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false });
 
-  if (isLoading) return <p className="text-gray-500">Loading users...</p>;
-  if (error) return <p className="text-red-500">Failed to load users</p>;
+  if (isLoading) return <p className="text-gray-500">Завантаження...</p>;
+  if (error) return <p className="text-red-500">Помилка завантаження користувачів</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Users</h2>
+        <h2 className="text-xl font-semibold">Користувачі</h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>
-          + Create user
+          + Створити користувача
         </Button>
       </div>
 

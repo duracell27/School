@@ -15,6 +15,9 @@ const userSelect = {
   name: true,
   role: true,
   avatar: true,
+  status: true,
+  hireDate: true,
+  terminationDate: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -44,8 +47,14 @@ export class UsersService {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already in use');
     const password = await bcrypt.hash(dto.password, 10);
+    const { hireDate, terminationDate, ...rest } = dto;
     return this.prisma.user.create({
-      data: { ...dto, password },
+      data: {
+        ...rest,
+        password,
+        ...(hireDate ? { hireDate: new Date(hireDate) } : {}),
+        ...(terminationDate ? { terminationDate: new Date(terminationDate) } : {}),
+      },
       select: userSelect,
     });
   }
@@ -60,8 +69,12 @@ export class UsersService {
         throw new ConflictException('Email already in use');
       }
     }
-    const { password, ...rest } = dto;
-    const data: Prisma.UserUpdateInput = { ...rest };
+    const { password, hireDate, terminationDate, ...rest } = dto;
+    const data: Prisma.UserUpdateInput = {
+      ...rest,
+      ...(hireDate ? { hireDate: new Date(hireDate) } : {}),
+      ...(terminationDate ? { terminationDate: new Date(terminationDate) } : {}),
+    };
     if (password) {
       data.password = await bcrypt.hash(password, 10);
     }
