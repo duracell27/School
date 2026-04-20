@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -75,7 +75,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
     reset,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({ resolver: zodResolver(schema) });
+  } = useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
 
   const currentName = watch('name') || child?.name || '';
 
@@ -209,7 +209,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
             </div>
             <div className="space-y-1">
               <Label>Таймзона</Label>
-              <Select value={timezone} onValueChange={setTimezone}>
+              <Select value={timezone} onValueChange={(v) => setTimezone(v ?? '')}>
                 <SelectTrigger>
                   <SelectValue>{timezone}</SelectValue>
                 </SelectTrigger>
@@ -251,7 +251,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
 
           <div className="space-y-1">
             <Label>Вчитель</Label>
-            <Select value={teacherId} onValueChange={setTeacherId}>
+            <Select value={teacherId} onValueChange={(v) => setTeacherId(v ?? '')}>
               <SelectTrigger>
                 <SelectValue>
                   {teacherId
