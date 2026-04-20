@@ -57,10 +57,16 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
   function handleSort(key: SortKey) {
-    if (sortKey !== key) { setSortKey(key); setSortDir('asc'); }
-    else {
-      setSortDir((d) => (d === 'asc' ? 'desc' : d === 'desc' ? null : 'asc'));
-      if (sortDir === 'desc') setSortKey(null);
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir('asc');
+    } else if (sortDir === 'asc') {
+      setSortDir('desc');
+    } else if (sortDir === 'desc') {
+      setSortDir(null);
+      setSortKey(null);
+    } else {
+      setSortDir('asc');
     }
   }
 

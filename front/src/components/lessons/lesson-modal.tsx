@@ -60,7 +60,7 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
   const { data: children = [] } = useChildren();
-  const { data: users = [] } = useUsers();
+  const { data: users = [] } = useUsers({ enabled: isAdmin });
 
   const { data: suggestedPrice } = usePriceSuggestion(
     childId || null,
@@ -99,7 +99,7 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
       setTeacherId(isAdmin ? '' : (currentUser?.id ?? ''));
       setStatus('PLANNED');
     }
-  }, [lesson, open]);
+  }, [lesson, open, isAdmin, currentUser?.id]);
 
   async function onSubmit(data: FormValues) {
     if (!childId || !teacherId) { setSubmitError('Оберіть учня та вчителя'); return; }
