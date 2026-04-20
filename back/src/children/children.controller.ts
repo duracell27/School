@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { ChildrenService } from './children.service';
@@ -43,6 +44,7 @@ export class ChildrenController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
     return this.children.remove(id);
   }
