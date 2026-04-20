@@ -73,6 +73,9 @@ model Lesson {
   originalEndDate   DateTime?
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
+
+  @@index([teacherId, startDate])
+  @@index([childId])
 }
 
 model LessonPrice {
@@ -85,4 +88,6 @@ model LessonPrice {
   effectiveDate DateTime
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([childId, teacherId, effectiveDate])
 }
