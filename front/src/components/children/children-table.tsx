@@ -25,6 +25,56 @@ function formatDate(date: string | null) {
   return new Date(date).toLocaleDateString('uk-UA');
 }
 
+function toTelegramHref(phone: string): string {
+  const digits = phone.replace(/\D/g, '');
+  return `https://t.me/+${digits}`;
+}
+
+// Ukraine uses Europe/Kyiv (UTC+2 winter / UTC+3 summer)
+const UKRAINE_TZ = 'Europe/Kyiv';
+
+function getTimezoneInfo(tzOffset: string): { time: string; date: string | null } | null {
+  const offset = parseInt(tzOffset, 10);
+  if (isNaN(offset)) return null;
+
+  const now = new Date();
+
+  // Current time in Ukraine
+  const uaFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: UKRAINE_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const uaDateStr = uaFormatter.format(now); // YYYY-MM-DD
+
+  // Current Ukraine UTC offset in hours
+  const uaOffsetMin = -new Date(
+    new Date().toLocaleString('en-US', { timeZone: UKRAINE_TZ })
+  ).getTimezoneOffset();
+  const uaOffset = Math.round(uaOffsetMin / 60);
+
+  // If this child is in Ukraine's current offset, skip
+  if (offset === uaOffset) return null;
+
+  // Compute local time for the child's offset
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const childMs = utcMs + offset * 3600000;
+  const childDate = new Date(childMs);
+
+  const time = childDate.toLocaleTimeString('uk-UA', {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
+
+  // Compare calendar dates (YYYY-MM-DD)
+  const childDateStr = childDate.toLocaleDateString('en-CA', { timeZone: 'UTC' });
+  const dateLabel = childDateStr !== uaDateStr
+    ? childDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', timeZone: 'UTC' })
+    : null;
+
+  return { time, date: dateLabel };
+}
+
 export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps) {
   return (
     <Table>
@@ -43,6 +93,7 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
       <TableBody>
         {children.map((child) => {
           const country = getCountry(child.country);
+          const tzInfo = getTimezoneInfo(child.timezone);
           return (
             <TableRow key={child.id}>
               <TableCell>
@@ -53,15 +104,23 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
               </TableCell>
               <TableCell>{child.age}</TableCell>
               <TableCell>
-                {country ? (
-                  <span className="flex items-center gap-1.5">
-                    {country.flag} {country.name}
-                  </span>
-                ) : (
-                  child.country
-                )}
+                <span title={country?.name ?? child.country}>
+                  {country?.flag ?? child.country}
+                </span>
               </TableCell>
-              <TableCell>{child.timezone}</TableCell>
+              <TableCell>
+                <div className="flex flex-col gap-0.5">
+                  <span>{child.timezone}</span>
+                  {tzInfo && (
+                    <span className="text-xs text-gray-500">
+                      {tzInfo.time}
+                      {tzInfo.date && (
+                        <span className="ml-1 text-orange-500">{tzInfo.date}</span>
+                      )}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>{child.teacher?.name ?? '—'}</TableCell>
               <TableCell>
                 <div className="flex flex-col gap-0.5 text-xs text-gray-600">
@@ -70,7 +129,15 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
                   ) : (
                     child.parentContacts.map((c, i) => (
                       <span key={i}>
-                        {c.label}: {c.phone}
+                        {c.label}:{' '}
+                        <a
+                          href={toTelegramHref(c.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {c.phone}
+                        </a>
                       </span>
                     ))
                   )}
