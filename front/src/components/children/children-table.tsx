@@ -48,7 +48,7 @@ function getTimezoneInfo(tzOffset: string): { time: string; date: string | null 
   if (offset === uaOffset) return null;
 
   const now = new Date();
-  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const utcMs = now.getTime(); // getTime() вже UTC
 
   const childDate = new Date(utcMs + offset * 3600000);
   const uaDate = new Date(utcMs + uaOffset * 3600000);
