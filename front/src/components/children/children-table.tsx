@@ -115,9 +115,9 @@ function SortButton({
   return (
     <button
       onClick={() => onToggle(colKey)}
-      className={`flex items-center gap-1 transition-colors hover:text-gray-900 ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
+      className="flex items-center gap-1 transition-colors hover:opacity-80"
     >
-      {label} <Icon size={13} />
+      {label} <Icon size={13} className={isActive ? 'opacity-100' : 'opacity-40'} />
     </button>
   );
 }
