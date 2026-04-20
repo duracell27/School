@@ -1,11 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
+import { ChildAvatar } from '@/components/children/child-avatar';
 import type { Lesson, LessonStatus } from '@/types/lesson';
 
-const HOUR_START = 8;
+const HOUR_START = 6;
 const HOUR_END = 22;
-const ROW_PX = 60;
+const ROW_PX = 48;
 const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 const TOTAL_H = (HOUR_END - HOUR_START) * ROW_PX;
 
@@ -43,6 +44,29 @@ function getLessonPos(lesson: Lesson): { top: number; height: number } | null {
   return { top: (cs - HOUR_START) * ROW_PX, height: (ce - cs) * ROW_PX };
 }
 
+function getUkraineOffset(): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Kyiv',
+    timeZoneName: 'shortOffset',
+  }).formatToParts(new Date());
+  const raw = parts.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT+2';
+  const m = raw.match(/GMT([+-]\d+)/);
+  return m ? parseInt(m[1]) : 2;
+}
+
+function getChildLocalTime(lesson: Lesson): string | null {
+  const childOffset = parseInt(lesson.child.timezone, 10);
+  if (isNaN(childOffset)) return null;
+  const uaOffset = getUkraineOffset();
+  if (childOffset === uaOffset) return null;
+
+  const utcMs = new Date(lesson.startDate).getTime();
+  const childDate = new Date(utcMs + childOffset * 3600000);
+  return childDate.toLocaleTimeString('uk-UA', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
+  });
+}
+
 interface WeekCalendarProps {
   lessons: Lesson[];
   weekStart: Date;
@@ -65,14 +89,14 @@ export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
   return (
     <div className="flex border rounded-lg overflow-hidden bg-white select-none">
       {/* Time column */}
-      <div className="w-14 shrink-0 border-r bg-gray-50">
+      <div className="w-12 shrink-0 border-r bg-gray-50">
         <div className="h-10 border-b" />
         <div className="relative" style={{ height: TOTAL_H }}>
           {HOURS.map((h) => (
             <div
               key={h}
-              className="absolute w-full pr-2 text-right text-[11px] text-gray-400"
-              style={{ top: (h - HOUR_START) * ROW_PX - 7 }}
+              className="absolute w-full pr-1.5 text-right text-[10px] text-gray-400"
+              style={{ top: (h - HOUR_START) * ROW_PX - 6 }}
             >
               {String(h).padStart(2, '0')}:00
             </div>
@@ -105,22 +129,34 @@ export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
                   style={{ top: (h - HOUR_START) * ROW_PX }}
                 />
               ))}
+
               {dayLessons.map((lesson) => {
                 const pos = getLessonPos(lesson);
                 if (!pos || pos.height < 8) return null;
+                const childTime = getChildLocalTime(lesson);
+
                 return (
                   <div
                     key={lesson.id}
                     className={`absolute left-0.5 right-0.5 rounded border-l-2 px-1 py-0.5 overflow-hidden ${STATUS_STYLE[lesson.status]}`}
                     style={{ top: pos.top + 1, height: pos.height - 2 }}
                   >
-                    <div className="text-[11px] font-semibold truncate leading-tight">
-                      {lesson.child.name}
+                    {/* Name row with avatar */}
+                    <div className="flex items-center gap-1 min-w-0">
+                      <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
+                      <span className="text-[11px] font-semibold truncate leading-tight">
+                        {lesson.child.name}
+                      </span>
                     </div>
-                    {pos.height >= 30 && (
-                      <div className="text-[10px] opacity-70 leading-tight">
+
+                    {/* UA lesson time */}
+                    {pos.height >= 28 && (
+                      <div className="text-[10px] opacity-70 leading-tight truncate">
                         {new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–
                         {new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                        {childTime && (
+                          <span className="ml-1 opacity-80">· {childTime}</span>
+                        )}
                       </div>
                     )}
                   </div>

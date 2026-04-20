@@ -4,6 +4,7 @@ export interface LessonChild {
   id: string;
   name: string;
   avatar: string | null;
+  timezone: string;
 }
 
 export interface LessonTeacher {
