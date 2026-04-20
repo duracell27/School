@@ -6,6 +6,8 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChildAvatar } from '@/components/children/child-avatar';
+import { UserAvatar } from '@/components/users/user-avatar';
 import type { Lesson, LessonStatus } from '@/types/lesson';
 
 interface LessonsTableProps {
@@ -97,11 +99,19 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
       <TableBody>
         {sorted.map((lesson) => (
           <TableRow key={lesson.id}>
-            <TableCell className="font-medium">{lesson.child.name}</TableCell>
             <TableCell>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
-                {lesson.teacher.name}
-              </span>
+              <div className="flex items-center gap-2">
+                <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
+                <span className="font-medium">{lesson.child.name}</span>
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex items-center gap-2">
+                <UserAvatar name={lesson.teacher.name} avatar={lesson.teacher.avatar} size={28} />
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+                  {lesson.teacher.name}
+                </span>
+              </div>
             </TableCell>
             <TableCell>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[lesson.status]}`}>

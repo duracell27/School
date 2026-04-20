@@ -1,9 +1,9 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { CalendarPicker } from './calendar-picker';
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
@@ -12,7 +12,6 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-// Parses "YYYY-MM-DDTHH:MM" into parts
 function parse(value: string): { date: string; hour: number; minute: number } {
   if (!value) return { date: '', hour: -1, minute: -1 };
   const [date, time] = value.split('T');
@@ -29,14 +28,12 @@ function build(date: string, hour: number, minute: number): string {
 interface DateTimePickerProps {
   value: string; // "YYYY-MM-DDTHH:MM" or ""
   onChange: (value: string) => void;
-  id?: string;
 }
 
-export function DateTimePicker({ value, onChange, id }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange }: DateTimePickerProps) {
   const { date, hour, minute } = parse(value);
 
-  function handleDateChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const newDate = e.target.value;
+  function handleDate(newDate: string) {
     onChange(build(newDate, hour >= 0 ? hour : 0, minute >= 0 ? minute : 0));
   }
 
@@ -51,14 +48,8 @@ export function DateTimePicker({ value, onChange, id }: DateTimePickerProps) {
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <Input
-        id={id}
-        type="date"
-        value={date}
-        onChange={handleDateChange}
-        className="h-9 w-36 text-sm"
-      />
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <CalendarPicker value={date} onChange={handleDate} />
       <Select value={hour >= 0 ? String(hour) : ''} onValueChange={handleHour}>
         <SelectTrigger className="h-9 w-[60px]">
           <SelectValue>{hour >= 0 ? pad(hour) : '--'}</SelectValue>
