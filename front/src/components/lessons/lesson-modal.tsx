@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { ChildSelect } from '@/components/shared/child-select';
 import { TeacherSelect } from '@/components/shared/teacher-select';
+import { DateTimePicker } from '@/components/shared/date-time-picker';
 import { useCreateLesson, useUpdateLesson, usePriceSuggestion } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
@@ -129,6 +130,16 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
     }
   }
 
+  function addDuration(minutes: number) {
+    const start = watch('startDate');
+    if (!start) return;
+    const d = new Date(start);
+    d.setMinutes(d.getMinutes() + minutes);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const end = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    setValue('endDate', end, { shouldValidate: true });
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -159,28 +170,48 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="lesson-start">Початок</Label>
-              <Input id="lesson-start" type="datetime-local" {...register('startDate')} />
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Початок</Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                <DateTimePicker
+                  value={watch('startDate') || ''}
+                  onChange={(v) => setValue('startDate', v, { shouldValidate: true })}
+                />
+                {watch('startDate') && (
+                  <>
+                    <Button type="button" size="sm" variant="outline" onClick={() => addDuration(55)}>55хв</Button>
+                    <Button type="button" size="sm" variant="outline" onClick={() => addDuration(30)}>30хв</Button>
+                  </>
+                )}
+              </div>
               {errors.startDate && <p className="text-sm text-red-500">{errors.startDate.message}</p>}
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="lesson-end">Кінець</Label>
-              <Input id="lesson-end" type="datetime-local" {...register('endDate')} />
+            <div className="space-y-1.5">
+              <Label>Кінець</Label>
+              <DateTimePicker
+                value={watch('endDate') || ''}
+                onChange={(v) => setValue('endDate', v, { shouldValidate: true })}
+              />
               {errors.endDate && <p className="text-sm text-red-500">{errors.endDate.message}</p>}
             </div>
           </div>
 
           {status === 'RESCHEDULED' && (
-            <div className="grid grid-cols-2 gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="space-y-1">
-                <Label htmlFor="orig-start" className="text-orange-700 text-xs">Первісний початок</Label>
-                <Input id="orig-start" type="datetime-local" {...register('originalStartDate')} />
+            <div className="space-y-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="space-y-1.5">
+                <Label className="text-orange-700 text-xs">Первісний початок</Label>
+                <DateTimePicker
+                  value={watch('originalStartDate') || ''}
+                  onChange={(v) => setValue('originalStartDate', v)}
+                />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="orig-end" className="text-orange-700 text-xs">Первісний кінець</Label>
-                <Input id="orig-end" type="datetime-local" {...register('originalEndDate')} />
+              <div className="space-y-1.5">
+                <Label className="text-orange-700 text-xs">Первісний кінець</Label>
+                <DateTimePicker
+                  value={watch('originalEndDate') || ''}
+                  onChange={(v) => setValue('originalEndDate', v)}
+                />
               </div>
             </div>
           )}
