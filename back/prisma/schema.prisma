@@ -16,6 +16,13 @@ enum EmploymentStatus {
   FIRED
 }
 
+enum LessonStatus {
+  PLANNED
+  CONDUCTED
+  CANCELLED
+  RESCHEDULED
+}
+
 model User {
   id               String           @id @default(cuid())
   email            String           @unique
@@ -28,22 +35,54 @@ model User {
   terminationDate  DateTime?
   refreshToken     String?
   children         Child[]
+  lessons          Lesson[]
+  lessonPrices     LessonPrice[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
 
 model Child {
-  id             String    @id @default(cuid())
+  id             String        @id @default(cuid())
   name           String
   age            Int
-  country        String    @default("UA")
+  country        String        @default("UA")
   avatar         String?
   hireDate       DateTime?
   graduationDate DateTime?
-  parentContacts Json      @default("[]")
+  parentContacts Json          @default("[]")
   timezone       String
   teacherId      String?
-  teacher        User?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  teacher        User?         @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  lessons        Lesson[]
+  lessonPrices   LessonPrice[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Lesson {
+  id                String       @id @default(cuid())
+  childId           String
+  child             Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           User         @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  status            LessonStatus @default(PLANNED)
+  startDate         DateTime
+  endDate           DateTime
+  price             Decimal
+  originalStartDate DateTime?
+  originalEndDate   DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model LessonPrice {
+  id            String   @id @default(cuid())
+  childId       String
+  child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacherId     String
+  teacher       User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  price         Decimal
+  effectiveDate DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
