@@ -54,7 +54,7 @@ export class LessonPricesService {
         ...(dto.childId !== undefined ? { childId: dto.childId } : {}),
         ...(dto.teacherId !== undefined ? { teacherId: dto.teacherId } : {}),
         ...(dto.price !== undefined ? { price: dto.price } : {}),
-        ...(dto.effectiveDate ? { effectiveDate: new Date(dto.effectiveDate) } : {}),
+        ...(dto.effectiveDate !== undefined ? { effectiveDate: new Date(dto.effectiveDate) } : {}),
       },
       select: lessonPriceSelect,
     });
