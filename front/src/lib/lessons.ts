@@ -92,3 +92,11 @@ export function useDeleteLessonPrice() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lesson-prices'] }),
   });
 }
+
+export function useOverdueCount() {
+  return useQuery({
+    queryKey: ['lessons', 'overdue-count'],
+    queryFn: () => apiFetch<number>('/lessons/overdue-count'),
+    refetchInterval: 5 * 60 * 1000,
+  });
+}
