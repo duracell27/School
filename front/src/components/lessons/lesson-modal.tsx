@@ -49,9 +49,13 @@ interface LessonModalProps {
   open: boolean;
   onClose: () => void;
   lesson?: Lesson;
+  defaultStartDate?: string; // ISO string, used when creating from slot click
+  defaultEndDate?: string;   // ISO string
+  defaultTeacherId?: string;
+  defaultChildId?: string;
 }
 
-export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
+export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEndDate, defaultTeacherId, defaultChildId }: LessonModalProps) {
   const isEdit = !!lesson;
   const [submitError, setSubmitError] = useState('');
   const [childId, setChildId] = useState('');
@@ -99,12 +103,18 @@ export function LessonModal({ open, onClose, lesson }: LessonModalProps) {
       setTeacherId(lesson.teacher.id);
       setStatus(lesson.status);
     } else {
-      reset({ startDate: '', endDate: '', price: undefined as never, originalStartDate: '', originalEndDate: '' });
-      setChildId('');
-      setTeacherId(isAdmin ? '' : (currentUser?.id ?? ''));
+      reset({
+        startDate: defaultStartDate ? toDatetimeLocal(defaultStartDate) : '',
+        endDate: defaultEndDate ? toDatetimeLocal(defaultEndDate) : '',
+        price: undefined as never,
+        originalStartDate: '',
+        originalEndDate: '',
+      });
+      setChildId(defaultChildId ?? '');
+      setTeacherId(defaultTeacherId ?? (isAdmin ? '' : (currentUser?.id ?? '')));
       setStatus('PLANNED');
     }
-  }, [lesson, open, isAdmin, currentUser?.id]);
+  }, [lesson, open, isAdmin, currentUser?.id, defaultStartDate, defaultEndDate, defaultTeacherId, defaultChildId]);
 
   async function onSubmit(data: FormValues) {
     if (!childId || !teacherId) { setSubmitError('Оберіть учня та вчителя'); return; }
