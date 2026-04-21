@@ -26,8 +26,11 @@ const childSelect = {
 export class ChildrenService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.child.findMany({ select: childSelect });
+  findAll(teacherId?: string) {
+    return this.prisma.child.findMany({
+      where: teacherId ? { teacherId } : undefined,
+      select: childSelect,
+    });
   }
 
   async findOne(id: string) {
