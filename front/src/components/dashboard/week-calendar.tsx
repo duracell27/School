@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import type { Lesson, LessonStatus } from '@/types/lesson';
+import { useDroppable, useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 const HOUR_START = 6;
 const HOUR_END = 22;
@@ -84,6 +86,112 @@ function isOverdue(lesson: Lesson): boolean {
   return lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
 }
 
+const HALF_HOURS = Array.from({ length: (HOUR_END - HOUR_START) * 2 }, (_, i) => ({
+  hour: HOUR_START + Math.floor(i / 2),
+  minute: (i % 2) * 30,
+}));
+
+function isSlotOccupied(dayLessons: Lesson[], hour: number, minute: number): boolean {
+  const slotMin = hour * 60 + minute;
+  return dayLessons.some((l) => {
+    const ls = new Date(l.startDate);
+    const le = new Date(l.endDate);
+    const lsMin = ls.getHours() * 60 + ls.getMinutes();
+    const leMin = le.getHours() * 60 + le.getMinutes();
+    return lsMin < slotMin + 30 && leMin > slotMin;
+  });
+}
+
+interface DroppableSlotProps {
+  id: string;
+  hour: number;
+  minute: number;
+  occupied: boolean;
+}
+
+function DroppableSlot({ id, hour, minute, occupied }: DroppableSlotProps) {
+  const { setNodeRef, isOver } = useDroppable({ id, data: { hour, minute } });
+  const top = ((hour - HOUR_START) * 2 + minute / 30) * (ROW_PX / 2);
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`absolute left-0 right-0 z-0 transition-colors ${
+        isOver ? (occupied ? 'bg-red-100' : 'bg-green-100') : ''
+      }`}
+      style={{ top, height: ROW_PX / 2 }}
+    />
+  );
+}
+
+interface DraggableLessonCardProps {
+  lesson: Lesson;
+  pos: { top: number; height: number };
+  onLessonClick?: (lesson: Lesson) => void;
+}
+
+function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `lesson-${lesson.id}`,
+    data: { type: 'lesson', lesson },
+  });
+
+  const overdue = isOverdue(lesson);
+  const cardStyle = overdue ? 'border-red-600 bg-red-100 text-red-900' : STATUS_STYLE[lesson.status];
+
+  const startStr = new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  const endStr = new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  const childTime = getChildLocalTime(lesson);
+
+  const style: React.CSSProperties = {
+    position: 'absolute',
+    top: pos.top + 1,
+    height: pos.height - 2,
+    left: 2,
+    right: 2,
+    zIndex: isDragging ? 0 : 10,
+    opacity: isDragging ? 0.3 : 1,
+    ...(transform ? { transform: CSS.Translate.toString(transform) } : {}),
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      data-lesson-id={lesson.id}
+      style={style}
+      className={`group rounded border-l-2 px-1 py-0.5 overflow-hidden cursor-grab ${cardStyle}`}
+      onClick={(e) => { e.stopPropagation(); onLessonClick?.(lesson); }}
+      {...listeners}
+      {...attributes}
+    >
+      {/* Hover tooltip */}
+      <div className="absolute bottom-full left-0 z-50 hidden group-hover:block bg-white border border-gray-200 rounded shadow-lg p-2 text-xs w-44 pointer-events-none">
+        <p className="font-semibold">{lesson.child.name}</p>
+        <p className="text-gray-500">{startStr}–{endStr}</p>
+        <p className="text-gray-500">{lesson.price}₴</p>
+        <p className="text-gray-500">{STATUS_LABEL[lesson.status]}</p>
+        {overdue && <p className="text-red-600 font-medium">Не оброблено!</p>}
+      </div>
+
+      <div className="flex items-center gap-1 min-w-0">
+        <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
+        <span className="text-[11px] font-semibold truncate leading-tight">{lesson.child.name}</span>
+      </div>
+
+      {pos.height >= 20 && (
+        <div className="text-[10px] opacity-70 leading-tight truncate">
+          {startStr}–{endStr}
+          {childTime && (
+            <span className="ml-1 opacity-80">
+              · {countryFlag(lesson.child.country)} {childTime}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface WeekCalendarProps {
   lessons: Lesson[];
   weekStart: Date;
@@ -155,6 +263,20 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
                 }
               }}
             >
+              {/* Drop target slots */}
+              {HALF_HOURS.map(({ hour: h, minute: m }) => {
+                const slotId = `slot-${key}-${h}-${m}`;
+                return (
+                  <DroppableSlot
+                    key={slotId}
+                    id={slotId}
+                    hour={h}
+                    minute={m}
+                    occupied={isSlotOccupied(dayLessons, h, m)}
+                  />
+                );
+              })}
+
               {/* Hour grid lines */}
               {HOURS.map((h) => (
                 <div
@@ -168,55 +290,13 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
               {dayLessons.map((lesson) => {
                 const pos = getLessonPos(lesson);
                 if (!pos || pos.height < 8) return null;
-                const childTime = getChildLocalTime(lesson);
-                const overdue = isOverdue(lesson);
-                const cardStyle = overdue
-                  ? 'border-red-600 bg-red-100 text-red-900'
-                  : STATUS_STYLE[lesson.status];
-
-                const startStr = new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-                const endStr = new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-
                 return (
-                  <div
+                  <DraggableLessonCard
                     key={lesson.id}
-                    data-lesson-id={lesson.id}
-                    className={`group absolute left-0.5 right-0.5 rounded border-l-2 px-1 py-0.5 overflow-hidden cursor-pointer z-10 ${cardStyle}`}
-                    style={{ top: pos.top + 1, height: pos.height - 2 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLessonClick?.(lesson);
-                    }}
-                  >
-                    {/* Hover tooltip */}
-                    <div className="absolute bottom-full left-0 z-50 hidden group-hover:block bg-white border border-gray-200 rounded shadow-lg p-2 text-xs w-44 pointer-events-none">
-                      <p className="font-semibold">{lesson.child.name}</p>
-                      <p className="text-gray-500">{startStr}–{endStr}</p>
-                      <p className="text-gray-500">{lesson.price}₴</p>
-                      <p className="text-gray-500">{STATUS_LABEL[lesson.status]}</p>
-                      {overdue && <p className="text-red-600 font-medium">Не оброблено!</p>}
-                    </div>
-
-                    {/* Name row with avatar */}
-                    <div className="flex items-center gap-1 min-w-0">
-                      <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
-                      <span className="text-[11px] font-semibold truncate leading-tight">
-                        {lesson.child.name}
-                      </span>
-                    </div>
-
-                    {/* Time row */}
-                    {pos.height >= 20 && (
-                      <div className="text-[10px] opacity-70 leading-tight truncate">
-                        {startStr}–{endStr}
-                        {childTime && (
-                          <span className="ml-1 opacity-80">
-                            · {countryFlag(lesson.child.country)} {childTime}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                    lesson={lesson}
+                    pos={pos}
+                    onLessonClick={onLessonClick}
+                  />
                 );
               })}
             </div>
