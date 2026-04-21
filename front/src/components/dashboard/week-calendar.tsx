@@ -17,6 +17,13 @@ const STATUS_STYLE: Record<LessonStatus, string> = {
   RESCHEDULED: 'border-orange-400 bg-orange-50 text-orange-900',
 };
 
+const STATUS_LABEL: Record<LessonStatus, string> = {
+  PLANNED: 'Заплановано',
+  CONDUCTED: 'Проведено',
+  CANCELLED: 'Скасовано',
+  RESCHEDULED: 'Перенесено',
+};
+
 export function getWeekStart(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
@@ -33,7 +40,7 @@ function getWeekDays(start: Date): Date[] {
   });
 }
 
-function getLessonPos(lesson: Lesson): { top: number; height: number } | null {
+export function getLessonPos(lesson: Lesson): { top: number; height: number } | null {
   const s = new Date(lesson.startDate);
   const e = new Date(lesson.endDate);
   const sh = s.getHours() + s.getMinutes() / 60;
@@ -67,12 +74,24 @@ function getChildLocalTime(lesson: Lesson): string | null {
   });
 }
 
+function countryFlag(code: string): string {
+  return [...code.toUpperCase()]
+    .map((c) => String.fromCodePoint(0x1f1e0 + c.charCodeAt(0) - 65))
+    .join('');
+}
+
+function isOverdue(lesson: Lesson): boolean {
+  return lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
+}
+
 interface WeekCalendarProps {
   lessons: Lesson[];
   weekStart: Date;
+  onSlotClick?: (dayKey: string, hour: number, minute: number) => void;
+  onLessonClick?: (lesson: Lesson) => void;
 }
 
-export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
+export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }: WeekCalendarProps) {
   const days = getWeekDays(weekStart);
   const todayKey = new Date().toLocaleDateString('en-CA');
 
@@ -121,26 +140,63 @@ export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
               </span>
             </div>
 
-            <div className="relative" style={{ height: TOTAL_H }}>
+            <div
+              className="relative"
+              style={{ height: TOTAL_H }}
+              onClick={(e) => {
+                if (!onSlotClick) return;
+                const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                const y = e.clientY - rect.top;
+                const totalMinutes = (y / ROW_PX) * 60;
+                const hour = HOUR_START + Math.floor(totalMinutes / 60);
+                const minute = Math.floor((totalMinutes % 60) / 30) * 30;
+                if (hour >= HOUR_START && hour < HOUR_END) {
+                  onSlotClick(key, hour, minute);
+                }
+              }}
+            >
+              {/* Hour grid lines */}
               {HOURS.map((h) => (
                 <div
                   key={h}
-                  className="absolute w-full border-t border-gray-100"
+                  className="absolute w-full border-t border-gray-100 pointer-events-none"
                   style={{ top: (h - HOUR_START) * ROW_PX }}
                 />
               ))}
 
+              {/* Lesson cards */}
               {dayLessons.map((lesson) => {
                 const pos = getLessonPos(lesson);
                 if (!pos || pos.height < 8) return null;
                 const childTime = getChildLocalTime(lesson);
+                const overdue = isOverdue(lesson);
+                const cardStyle = overdue
+                  ? 'border-red-600 bg-red-100 text-red-900'
+                  : STATUS_STYLE[lesson.status];
+
+                const startStr = new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+                const endStr = new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
 
                 return (
                   <div
                     key={lesson.id}
-                    className={`absolute left-0.5 right-0.5 rounded border-l-2 px-1 py-0.5 overflow-hidden ${STATUS_STYLE[lesson.status]}`}
+                    data-lesson-id={lesson.id}
+                    className={`group absolute left-0.5 right-0.5 rounded border-l-2 px-1 py-0.5 overflow-hidden cursor-pointer z-10 ${cardStyle}`}
                     style={{ top: pos.top + 1, height: pos.height - 2 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLessonClick?.(lesson);
+                    }}
                   >
+                    {/* Hover tooltip */}
+                    <div className="absolute bottom-full left-0 z-50 hidden group-hover:block bg-white border border-gray-200 rounded shadow-lg p-2 text-xs w-44 pointer-events-none">
+                      <p className="font-semibold">{lesson.child.name}</p>
+                      <p className="text-gray-500">{startStr}–{endStr}</p>
+                      <p className="text-gray-500">{lesson.price}₴</p>
+                      <p className="text-gray-500">{STATUS_LABEL[lesson.status]}</p>
+                      {overdue && <p className="text-red-600 font-medium">Не оброблено!</p>}
+                    </div>
+
                     {/* Name row with avatar */}
                     <div className="flex items-center gap-1 min-w-0">
                       <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
@@ -149,13 +205,14 @@ export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
                       </span>
                     </div>
 
-                    {/* UA lesson time */}
+                    {/* Time row */}
                     {pos.height >= 20 && (
                       <div className="text-[10px] opacity-70 leading-tight truncate">
-                        {new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–
-                        {new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                        {startStr}–{endStr}
                         {childTime && (
-                          <span className="ml-1 opacity-80">· {childTime}</span>
+                          <span className="ml-1 opacity-80">
+                            · {countryFlag(lesson.child.country)} {childTime}
+                          </span>
                         )}
                       </div>
                     )}
