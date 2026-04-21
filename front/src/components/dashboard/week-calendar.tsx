@@ -6,7 +6,7 @@ import type { Lesson, LessonStatus } from '@/types/lesson';
 
 const HOUR_START = 6;
 const HOUR_END = 22;
-const ROW_PX = 48;
+const ROW_PX = 36;
 const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 const TOTAL_H = (HOUR_END - HOUR_START) * ROW_PX;
 
@@ -150,7 +150,7 @@ export function WeekCalendar({ lessons, weekStart }: WeekCalendarProps) {
                     </div>
 
                     {/* UA lesson time */}
-                    {pos.height >= 28 && (
+                    {pos.height >= 20 && (
                       <div className="text-[10px] opacity-70 leading-tight truncate">
                         {new Date(lesson.startDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}–
                         {new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
