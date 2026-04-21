@@ -74,6 +74,17 @@ export class LessonsService {
     return lp ? Number(lp.price) : null;
   }
 
+  async getOverdueCount(userId: string, userRole: Role): Promise<number> {
+    const where: Prisma.LessonWhereInput = {
+      status: 'PLANNED',
+      endDate: { lt: new Date() },
+    };
+    if (userRole === Role.TEACHER) {
+      where.teacherId = userId;
+    }
+    return this.prisma.lesson.count({ where });
+  }
+
   async create(dto: CreateLessonDto, userId: string, userRole: Role) {
     if (userRole === Role.TEACHER) {
       const child = await this.prisma.child.findUnique({

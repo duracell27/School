@@ -29,6 +29,12 @@ export class LessonsController {
     return this.lessons.findAll(user.sub, user.role, query);
   }
 
+  @Get('overdue-count')
+  getOverdueCount(@Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.lessons.getOverdueCount(user.sub, user.role);
+  }
+
   // Defined before :id to avoid routing conflict
   @Get('price-suggestion')
   getPriceSuggestion(
