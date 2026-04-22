@@ -11,9 +11,10 @@ interface ChildSelectProps {
   value: string;
   onChange: (id: string) => void;
   placeholder?: string;
+  renderSuffix?: (child: Child) => React.ReactNode;
 }
 
-export function ChildSelect({ children, value, onChange, placeholder = 'Оберіть учня' }: ChildSelectProps) {
+export function ChildSelect({ children, value, onChange, placeholder = 'Оберіть учня', renderSuffix }: ChildSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +52,9 @@ export function ChildSelect({ children, value, onChange, placeholder = 'Обер
             <ChildAvatar name={selected.name} avatar={selected.avatar} size={20} />
             <span className="text-base leading-none">{getCountry(selected.country)?.flag ?? selected.country}</span>
             <span className="truncate">{selected.name}</span>
+            {renderSuffix && (
+              <span className="ml-auto shrink-0">{renderSuffix(selected)}</span>
+            )}
           </>
         ) : (
           <span className="text-muted-foreground">{placeholder}</span>
@@ -81,6 +85,9 @@ export function ChildSelect({ children, value, onChange, placeholder = 'Обер
                     <ChildAvatar name={c.name} avatar={c.avatar} size={20} />
                     <span className="text-base leading-none">{country?.flag ?? c.country}</span>
                     <span>{c.name}</span>
+                    {renderSuffix && (
+                      <span className="ml-auto">{renderSuffix(c)}</span>
+                    )}
                   </button>
                 </li>
               );

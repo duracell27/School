@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChildSelect } from '@/components/shared/child-select';
 import { TeacherSelect } from '@/components/shared/teacher-select';
-import { useCreateLessonPrice, useUpdateLessonPrice } from '@/lib/lessons';
+import { useCreateLessonPrice, useUpdateLessonPrice, useLessonPrices } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import type { LessonPrice } from '@/types/lesson';
@@ -39,6 +39,19 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
   const updatePrice = useUpdateLessonPrice();
   const { data: children = [] } = useChildren();
   const { data: users = [] } = useUsers();
+  const { data: allPrices = [] } = useLessonPrices();
+
+  const latestPriceByChild = useMemo(() => {
+    if (!teacherId) return {} as Record<string, string>;
+    const map: Record<string, string> = {};
+    allPrices
+      .filter((p) => p.teacher.id === teacherId)
+      .sort((a, b) => b.effectiveDate.localeCompare(a.effectiveDate))
+      .forEach((p) => {
+        if (!(p.child.id in map)) map[p.child.id] = p.price;
+      });
+    return map;
+  }, [allPrices, teacherId]);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
     useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
@@ -80,7 +93,18 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
             <Label>Учень</Label>
-            <ChildSelect children={children} value={childId} onChange={setChildId} />
+            <ChildSelect
+              children={children}
+              value={childId}
+              onChange={setChildId}
+              renderSuffix={(c) => (
+                <span className="text-xs text-gray-400 font-normal">
+                  {latestPriceByChild[c.id]
+                    ? `${Number(latestPriceByChild[c.id]).toLocaleString('uk-UA')} грн`
+                    : 'не встановлено'}
+                </span>
+              )}
+            />
           </div>
           <div className="space-y-1">
             <Label>Вчитель</Label>
