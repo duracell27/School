@@ -30,6 +30,10 @@ const STATUS_COLORS: Record<LessonStatus, string> = {
   RESCHEDULED: 'bg-orange-100 text-orange-700',
 };
 
+function isOverdue(lesson: Lesson): boolean {
+  return lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
+}
+
 function fmtDateTime(dt: string | null) {
   if (!dt) return '—';
   return new Date(dt).toLocaleString('uk-UA', {
@@ -98,7 +102,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
       </TableHeader>
       <TableBody>
         {sorted.map((lesson) => (
-          <TableRow key={lesson.id}>
+          <TableRow key={lesson.id} className={isOverdue(lesson) ? 'bg-red-50' : ''}>
             <TableCell>
               <div className="flex items-center gap-2">
                 <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
@@ -114,9 +118,14 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
               </div>
             </TableCell>
             <TableCell>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[lesson.status]}`}>
-                {STATUS_LABELS[lesson.status]}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[lesson.status]}`}>
+                  {STATUS_LABELS[lesson.status]}
+                </span>
+                {isOverdue(lesson) && (
+                  <span className="text-xs text-red-600 font-medium">Не оброблено!</span>
+                )}
+              </div>
             </TableCell>
             <TableCell>
               <div className="flex flex-col gap-0.5">
