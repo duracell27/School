@@ -2,10 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 import type { User, CreateUserPayload, UpdateUserPayload } from '@/types/user';
 
-export function useUsers() {
+export function useUsers(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['users'],
     queryFn: () => apiFetch<User[]>('/users'),
+    enabled: options.enabled !== false,
   });
 }
 
