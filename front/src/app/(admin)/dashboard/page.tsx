@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragOverEvent, type DragStartEvent } from '@dnd-kit/core';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -77,6 +77,7 @@ export default function DashboardPage() {
   const [editLesson, setEditLesson] = useState<Lesson | null>(null);
   const [lessonPopover, setLessonPopover] = useState<LessonPopoverState | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [hoverSlot, setHoverSlot] = useState<{ hour: number; minute: number } | null>(null);
 
   const { data: users = [] } = useUsers();
   const teacherId = isAdmin ? selectedTeacherId : (currentUser?.id ?? '');
@@ -117,6 +118,15 @@ export default function DashboardPage() {
     setLessonPopover({ lesson, anchorRect: rect });
   }, []);
 
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const data = event.over?.data.current as { hour?: number; minute?: number } | undefined;
+    if (data?.hour !== undefined && data?.minute !== undefined) {
+      setHoverSlot({ hour: data.hour, minute: data.minute });
+    } else {
+      setHoverSlot(null);
+    }
+  }, []);
+
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current as { type: string; child?: Child; lesson?: Lesson };
     if (data.type === 'child' && data.child) setActiveDrag({ type: 'child', child: data.child });
@@ -125,6 +135,7 @@ export default function DashboardPage() {
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveDrag(null);
+    setHoverSlot(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -205,7 +216,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="flex gap-3 items-start">
           {/* Sidebar */}
           {(teacherId || !isAdmin) && (
@@ -241,12 +252,29 @@ export default function DashboardPage() {
           {activeDrag?.type === 'child' && (
             <div className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded-lg shadow-lg text-sm font-medium opacity-90 w-44">
               <ChildAvatar name={activeDrag.child.name} avatar={activeDrag.child.avatar} size={24} />
-              <span className="truncate">{activeDrag.child.name}</span>
+              <div className="flex flex-col min-w-0">
+                <span className="truncate leading-tight">{activeDrag.child.name}</span>
+                {hoverSlot && (
+                  <span className="text-xs text-blue-500 leading-tight">
+                    {String(hoverSlot.hour).padStart(2, '0')}:{String(hoverSlot.minute).padStart(2, '0')}–
+                    {(() => {
+                      const end = new Date(0);
+                      end.setHours(hoverSlot.hour, hoverSlot.minute + duration, 0, 0);
+                      return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
+                    })()}
+                  </span>
+                )}
+              </div>
             </div>
           )}
           {activeDrag?.type === 'lesson' && (
             <div className="px-2 py-1 bg-blue-50 border-l-2 border-blue-400 rounded text-xs font-semibold text-blue-900 shadow-lg w-32 opacity-90">
-              {activeDrag.lesson.child.name}
+              <div>{activeDrag.lesson.child.name}</div>
+              {hoverSlot && (
+                <div className="text-blue-500 font-normal">
+                  {String(hoverSlot.hour).padStart(2, '0')}:{String(hoverSlot.minute).padStart(2, '0')}
+                </div>
+              )}
             </div>
           )}
         </DragOverlay>
