@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { ChildAvatar } from '@/components/children/child-avatar';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -11,7 +12,7 @@ import { WeekCalendar, getWeekStart } from '@/components/dashboard/week-calendar
 import { ChildrenSidebar } from '@/components/dashboard/children-sidebar';
 import { LessonActionsPopover } from '@/components/dashboard/lesson-actions-popover';
 import { LessonModal } from '@/components/lessons/lesson-modal';
-import { useLessons, useCreateLesson, useUpdateLesson } from '@/lib/lessons';
+import { useLessons, useUpdateLesson } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { useSessionStore } from '@/store/session.store';
@@ -52,7 +53,12 @@ interface SlotModalState {
   startDate: string;
   endDate: string;
   teacherId: string;
+  defaultChildId?: string;
 }
+
+type ActiveDrag =
+  | { type: 'child'; child: Child }
+  | { type: 'lesson'; lesson: Lesson };
 
 interface LessonPopoverState {
   lesson: Lesson;
@@ -70,6 +76,7 @@ export default function DashboardPage() {
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null);
   const [editLesson, setEditLesson] = useState<Lesson | null>(null);
   const [lessonPopover, setLessonPopover] = useState<LessonPopoverState | null>(null);
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
   const { data: users = [] } = useUsers();
   const teacherId = isAdmin ? selectedTeacherId : (currentUser?.id ?? '');
@@ -83,7 +90,6 @@ export default function DashboardPage() {
     teacherId ? { teacherId } : {}
   );
 
-  const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
 
   const sensors = useSensors(
@@ -111,7 +117,14 @@ export default function DashboardPage() {
     setLessonPopover({ lesson, anchorRect: rect });
   }, []);
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const data = event.active.data.current as { type: string; child?: Child; lesson?: Lesson };
+    if (data.type === 'child' && data.child) setActiveDrag({ type: 'child', child: data.child });
+    else if (data.type === 'lesson' && data.lesson) setActiveDrag({ type: 'lesson', lesson: data.lesson });
+  }, []);
+
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    setActiveDrag(null);
     const { active, over } = event;
     if (!over) return;
 
@@ -130,14 +143,7 @@ export default function DashboardPage() {
       if (isSlotOccupied(lessons, dayKey, hour, minute, duration)) return;
       const startDate = buildStartISO(dayKey, hour, minute);
       const endDate = new Date(new Date(startDate).getTime() + duration * 60000).toISOString();
-      await createLesson.mutateAsync({
-        childId: child.id,
-        teacherId,
-        status: 'PLANNED',
-        startDate,
-        endDate,
-        price: 0,
-      });
+      setSlotModal({ startDate, endDate, teacherId, defaultChildId: child.id });
     }
 
     if (activeData.type === 'lesson' && activeData.lesson) {
@@ -160,7 +166,7 @@ export default function DashboardPage() {
         },
       });
     }
-  }, [lessons, duration, teacherId, createLesson, updateLesson]);
+  }, [lessons, duration, teacherId, updateLesson]);
 
   return (
     <div className="space-y-4">
@@ -199,7 +205,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="flex gap-3 items-start">
           {/* Sidebar */}
           {(teacherId || !isAdmin) && (
@@ -230,6 +236,20 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activeDrag?.type === 'child' && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded-lg shadow-lg text-sm font-medium opacity-90 w-44">
+              <ChildAvatar name={activeDrag.child.name} avatar={activeDrag.child.avatar} size={24} />
+              <span className="truncate">{activeDrag.child.name}</span>
+            </div>
+          )}
+          {activeDrag?.type === 'lesson' && (
+            <div className="px-2 py-1 bg-blue-50 border-l-2 border-blue-400 rounded text-xs font-semibold text-blue-900 shadow-lg w-32 opacity-90">
+              {activeDrag.lesson.child.name}
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
 
       {/* Slot click → create modal */}
@@ -240,6 +260,7 @@ export default function DashboardPage() {
           defaultStartDate={slotModal.startDate}
           defaultEndDate={slotModal.endDate}
           defaultTeacherId={slotModal.teacherId}
+          defaultChildId={slotModal.defaultChildId}
         />
       )}
 
