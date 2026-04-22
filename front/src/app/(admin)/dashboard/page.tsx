@@ -64,7 +64,7 @@ export default function DashboardPage() {
   const isAdmin = currentUser?.role === 'ADMIN';
 
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
-  const [selectedTeacherId, setSelectedTeacherId] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState(() => currentUser?.id ?? '');
   const [duration, setDuration] = useState<55 | 30>(55);
 
   const [slotModal, setSlotModal] = useState<SlotModalState | null>(null);

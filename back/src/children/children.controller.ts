@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Req,
+  Query,
   UseGuards,
   HttpCode,
 } from '@nestjs/common';
@@ -31,9 +32,9 @@ export class ChildrenController {
 
   @Get()
   @Roles(Role.ADMIN, Role.TEACHER)
-  findAll(@Req() req: Request) {
+  findAll(@Query('teacherId') teacherIdParam: string | undefined, @Req() req: Request) {
     const user = req['user'] as JwtUser;
-    const teacherId = user.role === Role.TEACHER ? user.sub : undefined;
+    const teacherId = user.role === Role.TEACHER ? user.sub : teacherIdParam;
     return this.children.findAll(teacherId);
   }
 
