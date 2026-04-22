@@ -131,9 +131,12 @@ interface DraggableLessonCardProps {
 }
 
 function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCardProps) {
+  const draggable = lesson.status !== 'CONDUCTED';
+
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lesson-${lesson.id}`,
     data: { type: 'lesson', lesson },
+    disabled: !draggable,
   });
 
   const overdue = isOverdue(lesson);
@@ -159,7 +162,7 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
       ref={setNodeRef}
       data-lesson-id={lesson.id}
       style={style}
-      className={`group rounded border-l-2 px-1 py-0.5 overflow-hidden cursor-grab ${cardStyle}`}
+      className={`group rounded border-l-2 px-1 py-0.5 overflow-hidden ${draggable ? 'cursor-grab' : 'cursor-pointer'} ${cardStyle}`}
       onClick={(e) => { e.stopPropagation(); onLessonClick?.(lesson); }}
       {...listeners}
       {...attributes}

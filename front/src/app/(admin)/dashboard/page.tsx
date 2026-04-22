@@ -142,6 +142,7 @@ export default function DashboardPage() {
 
     if (activeData.type === 'lesson' && activeData.lesson) {
       const lesson = activeData.lesson;
+      if (lesson.status === 'CONDUCTED') return;
       if (isSlotOccupied(lessons, dayKey, hour, minute, duration, lesson.id)) return;
       const originalStart = lesson.startDate;
       const originalEnd = lesson.endDate;

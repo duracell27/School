@@ -68,9 +68,13 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
       className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-52"
       style={{ top, left }}
     >
-      <ActionBtn onClick={markConducted} disabled={busy}>✅ Позначити проведеним</ActionBtn>
+      {lesson.status !== 'CONDUCTED' && (
+        <ActionBtn onClick={markConducted} disabled={busy}>✅ Позначити проведеним</ActionBtn>
+      )}
       <ActionBtn onClick={() => { onEdit(lesson); onClose(); }} disabled={false}>✏️ Редагувати</ActionBtn>
-      <ActionBtn onClick={() => { onEdit(lesson); onClose(); }} disabled={false}>📅 Перенести</ActionBtn>
+      {lesson.status !== 'CONDUCTED' && (
+        <ActionBtn onClick={() => { onEdit(lesson); onClose(); }} disabled={false}>📅 Перенести</ActionBtn>
+      )}
       <ActionBtn onClick={duplicateNextWeek} disabled={busy}>📋 Повторити наступного тижня</ActionBtn>
       <div className="border-t border-gray-100 my-1" />
       <ActionBtn onClick={cancelLesson} disabled={busy} className="text-orange-600">❌ Скасувати</ActionBtn>
