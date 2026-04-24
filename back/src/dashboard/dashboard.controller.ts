@@ -1,8 +1,6 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import type { Request } from 'express';
 import { DashboardService } from './dashboard.service';
-import { DashboardQueryDto } from './dto/dashboard-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';

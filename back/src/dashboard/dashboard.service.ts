@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, Role } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { Period } from './dto/dashboard-query.dto';
 
