@@ -51,17 +51,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom row: chart (2/3) + country breakdown (1/3) */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <LessonChart period={period} />
         <ChildrenByCountry />
       </div>
 
       {/* Admin-only teacher table */}
-      {isAdmin && (
-        <div className="grid grid-cols-1">
-          <TeachersTable period={period} />
-        </div>
-      )}
+      {isAdmin && <TeachersTable period={period} />}
     </div>
   );
 }
