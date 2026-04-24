@@ -38,9 +38,9 @@ export function LessonChart({ period }: LessonChartProps) {
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
               <Tooltip
                 contentStyle={{ fontSize: 12 }}
-                formatter={(value: number, name: string) => {
-                  const cfg = STATUS_CONFIG.find((s) => s.key === name);
-                  return [value, cfg?.label ?? name];
+                formatter={(value, name) => {
+                  const cfg = STATUS_CONFIG.find((s) => s.key === String(name));
+                  return [value, cfg?.label ?? String(name)];
                 }}
               />
               <Legend
