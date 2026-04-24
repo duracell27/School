@@ -3,15 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { useTeachersTable } from '@/lib/dashboard';
+import { formatCurrency } from '@/lib/format';
 import type { Period } from '@/types/dashboard';
-
-function formatCurrency(n: number): string {
-  return new Intl.NumberFormat('uk-UA', {
-    style: 'currency',
-    currency: 'UAH',
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 interface TeachersTableProps {
   period: Period;
@@ -28,6 +21,8 @@ export function TeachersTable({ period }: TeachersTableProps) {
       <CardContent className="p-0">
         {isLoading ? (
           <div className="h-24 mx-6 mb-4 bg-gray-100 rounded animate-pulse" />
+        ) : data.length === 0 ? (
+          <p className="px-6 py-4 text-sm text-gray-400">Немає вчителів</p>
         ) : (
           <table className="w-full text-sm">
             <thead>

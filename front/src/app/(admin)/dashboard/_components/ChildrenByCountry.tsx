@@ -24,7 +24,7 @@ export function ChildrenByCountry() {
               return (
                 <li key={country} className="flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2">
-                    <span className="text-base">{info?.flag ?? country}</span>
+                    <span aria-hidden="true" className="text-base">{info?.flag ?? country}</span>
                     <span className="text-gray-700">{info?.name ?? country}</span>
                   </span>
                   <span className="font-semibold tabular-nums">{count}</span>

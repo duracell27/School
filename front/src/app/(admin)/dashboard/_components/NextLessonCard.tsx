@@ -40,9 +40,9 @@ export function NextLessonCard() {
 
   const startMs = lesson ? new Date(lesson.startDate).getTime() : null;
   const endMs = lesson ? new Date(lesson.endDate).getTime() : null;
-  const countdown = useCountdownMs(startMs);
-  const isInProgress = startMs !== null && endMs !== null && Date.now() >= startMs && Date.now() < endMs;
-  const remainingMs = isInProgress && endMs ? endMs - Date.now() : 0;
+  const msUntilStart = useCountdownMs(startMs);
+  const msUntilEnd = useCountdownMs(endMs);
+  const isInProgress = startMs !== null && msUntilStart <= 0 && (endMs === null || msUntilEnd > 0);
 
   return (
     <Card>
@@ -64,8 +64,8 @@ export function NextLessonCard() {
               </p>
               <p className={`text-sm font-medium mt-0.5 ${isInProgress ? 'text-green-600' : 'text-blue-600'}`}>
                 {isInProgress
-                  ? `Зараз · залишилось ${formatCountdown(remainingMs)}`
-                  : formatCountdown(countdown)}
+                  ? `Зараз · залишилось ${formatCountdown(msUntilEnd)}`
+                  : formatCountdown(msUntilStart)}
               </p>
             </div>
           </div>

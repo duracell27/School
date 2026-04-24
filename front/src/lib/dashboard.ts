@@ -25,7 +25,7 @@ export function useNextLesson() {
     queryKey: ['dashboard', 'next-lesson'],
     queryFn: () => apiFetch<NextLesson | null>('/dashboard/next-lesson'),
     refetchInterval: 60_000,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 }
 
