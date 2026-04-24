@@ -5,16 +5,18 @@ import type {
 } from '@/types/dashboard';
 
 export function useDashboardSummary(period: Period) {
+  const qs = new URLSearchParams({ period }).toString();
   return useQuery({
     queryKey: ['dashboard', 'summary', period],
-    queryFn: () => apiFetch<DashboardSummary>(`/dashboard/summary?period=${period}`),
+    queryFn: () => apiFetch<DashboardSummary>(`/dashboard/summary?${qs}`),
   });
 }
 
 export function useDashboardChart(period: Period) {
+  const qs = new URLSearchParams({ period }).toString();
   return useQuery({
     queryKey: ['dashboard', 'chart', period],
-    queryFn: () => apiFetch<ChartPoint[]>(`/dashboard/chart?period=${period}`),
+    queryFn: () => apiFetch<ChartPoint[]>(`/dashboard/chart?${qs}`),
   });
 }
 
@@ -23,6 +25,7 @@ export function useNextLesson() {
     queryKey: ['dashboard', 'next-lesson'],
     queryFn: () => apiFetch<NextLesson | null>('/dashboard/next-lesson'),
     refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 }
 
@@ -34,8 +37,9 @@ export function useChildrenStats() {
 }
 
 export function useTeachersTable(period: Period) {
+  const qs = new URLSearchParams({ period }).toString();
   return useQuery({
     queryKey: ['dashboard', 'teachers', period],
-    queryFn: () => apiFetch<TeacherRow[]>(`/dashboard/teachers?period=${period}`),
+    queryFn: () => apiFetch<TeacherRow[]>(`/dashboard/teachers?${qs}`),
   });
 }

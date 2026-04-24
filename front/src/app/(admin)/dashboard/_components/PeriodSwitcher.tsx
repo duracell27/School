@@ -13,10 +13,12 @@ interface PeriodSwitcherProps {
 
 export function PeriodSwitcher({ value, onChange }: PeriodSwitcherProps) {
   return (
-    <div className="inline-flex rounded-lg border bg-white overflow-hidden">
+    <div role="group" aria-label="Виберіть період" className="inline-flex rounded-lg border bg-white overflow-hidden">
       {OPTIONS.map((opt) => (
         <button
           key={opt.value}
+          type="button"
+          aria-pressed={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={`px-4 py-1.5 text-sm font-medium transition-colors ${
             value === opt.value

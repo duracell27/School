@@ -65,7 +65,7 @@ interface LessonPopoverState {
   anchorRect: DOMRect;
 }
 
-export default function DashboardPage() {
+export default function CalendarPage() {
   const currentUser = useSessionStore((s) => s.user);
   const isAdmin = currentUser?.role === 'ADMIN';
 
