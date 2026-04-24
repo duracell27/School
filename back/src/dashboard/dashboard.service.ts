@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma, Role } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { Period } from './dto/dashboard-query.dto';
@@ -88,4 +89,160 @@ export function getLessonGroupKey(lessonDate: Date, period: Period): string {
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async getNextLesson(userId: string, userRole: Role) {
+    const now = new Date();
+    const where: Prisma.LessonWhereInput = {
+      status: 'PLANNED',
+      endDate: { gte: now },
+    };
+    if (userRole === Role.TEACHER) {
+      where.teacherId = userId;
+    }
+    return this.prisma.lesson.findFirst({
+      where,
+      orderBy: { startDate: 'asc' },
+      select: {
+        id: true,
+        startDate: true,
+        endDate: true,
+        child: { select: { id: true, name: true, avatar: true } },
+        teacher: { select: { id: true, name: true } },
+      },
+    });
+  }
+
+  async getSummary(userId: string, userRole: Role, period: Period) {
+    const { start, end } = getPeriodRange(period);
+    const { start: prevStart, end: prevEnd } = getPrevPeriodRange(period);
+    const now = new Date();
+    const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
+
+    const [conducted, planned, prevConducted] = await Promise.all([
+      this.prisma.lesson.aggregate({
+        where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
+        _sum: { price: true },
+      }),
+      this.prisma.lesson.aggregate({
+        where: { ...teacherFilter, status: 'PLANNED', startDate: { gte: now, lt: end } },
+        _sum: { price: true },
+      }),
+      this.prisma.lesson.aggregate({
+        where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: prevStart, lt: prevEnd } },
+        _sum: { price: true },
+      }),
+    ]);
+
+    const earned = Number(conducted._sum.price ?? 0);
+    const expected = Number(planned._sum.price ?? 0);
+    const prevEarned = Number(prevConducted._sum.price ?? 0);
+    const earnedDelta = prevEarned === 0
+      ? null
+      : Math.round(((earned - prevEarned) / prevEarned) * 100);
+
+    return { earned, expected, earnedDelta };
+  }
+
+  async getChart(userId: string, userRole: Role, period: Period): Promise<ChartPoint[]> {
+    const { start, end } = getPeriodRange(period);
+    const where: Prisma.LessonWhereInput = { startDate: { gte: start, lt: end } };
+    if (userRole === Role.TEACHER) where.teacherId = userId;
+
+    const lessons = await this.prisma.lesson.findMany({
+      where,
+      select: { startDate: true, status: true },
+    });
+
+    const skeleton = buildChartSkeleton(period, start);
+
+    const statusMap: Record<string, keyof Omit<ChartPoint, 'label'>> = {
+      CONDUCTED: 'conducted',
+      CANCELLED: 'cancelled',
+      PLANNED: 'planned',
+      RESCHEDULED: 'rescheduled',
+    };
+
+    for (const lesson of lessons) {
+      const key = getLessonGroupKey(new Date(lesson.startDate), period);
+      const point = skeleton.find((p) => p.label === key);
+      if (point) {
+        const field = statusMap[lesson.status];
+        if (field) point[field]++;
+      }
+    }
+
+    return skeleton;
+  }
+
+  async getChildrenStats(userId: string, userRole: Role) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
+
+    const activeWhere: Prisma.ChildWhereInput = {
+      ...teacherFilter,
+      teacherId: { not: null },
+      OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
+    };
+
+    const [active, newThisMonth, byCountryRaw] = await Promise.all([
+      this.prisma.child.count({ where: activeWhere }),
+      this.prisma.child.count({
+        where: { ...teacherFilter, hireDate: { gte: monthStart } },
+      }),
+      this.prisma.child.groupBy({
+        by: ['country'],
+        where: activeWhere,
+        _count: { country: true },
+        orderBy: { _count: { country: 'desc' } },
+      }),
+    ]);
+
+    return {
+      active,
+      newThisMonth,
+      byCountry: byCountryRaw.map((r) => ({ country: r.country, count: r._count.country })),
+    };
+  }
+
+  async getTeachers(period: Period) {
+    const { start, end } = getPeriodRange(period);
+    const now = new Date();
+
+    const teachers = await this.prisma.user.findMany({
+      where: { role: 'TEACHER', status: 'WORKING' },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        children: {
+          where: {
+            teacherId: { not: null },
+            OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
+          },
+          select: { id: true },
+        },
+        lessons: {
+          where: { startDate: { gte: start, lt: end } },
+          select: { status: true, price: true, startDate: true },
+        },
+      },
+    });
+
+    return teachers
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        avatar: t.avatar,
+        lessonsCount: t.lessons.length,
+        earned: t.lessons
+          .filter((l) => l.status === 'CONDUCTED')
+          .reduce((sum, l) => sum + Number(l.price), 0),
+        expected: t.lessons
+          .filter((l) => l.status === 'PLANNED' && new Date(l.startDate) >= now)
+          .reduce((sum, l) => sum + Number(l.price), 0),
+        childrenCount: t.children.length,
+      }))
+      .sort((a, b) => b.lessonsCount - a.lessonsCount);
+  }
 }

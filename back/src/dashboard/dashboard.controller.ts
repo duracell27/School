@@ -1,9 +1,11 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import type { Request } from 'express';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { DashboardQueryDto } from './dto/dashboard-query.dto';
 
 interface JwtUser { sub: string; role: Role; }
 
@@ -12,4 +14,34 @@ interface JwtUser { sub: string; role: Role; }
 @Roles(Role.ADMIN, Role.TEACHER)
 export class DashboardController {
   constructor(private readonly dashboard: DashboardService) {}
+
+  @Get('next-lesson')
+  getNextLesson(@Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.dashboard.getNextLesson(user.sub, user.role);
+  }
+
+  @Get('summary')
+  getSummary(@Query() query: DashboardQueryDto, @Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.dashboard.getSummary(user.sub, user.role, query.period);
+  }
+
+  @Get('chart')
+  getChart(@Query() query: DashboardQueryDto, @Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.dashboard.getChart(user.sub, user.role, query.period);
+  }
+
+  @Get('children-stats')
+  getChildrenStats(@Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.dashboard.getChildrenStats(user.sub, user.role);
+  }
+
+  @Get('teachers')
+  @Roles(Role.ADMIN)
+  getTeachers(@Query() query: DashboardQueryDto) {
+    return this.dashboard.getTeachers(query.period);
+  }
 }
