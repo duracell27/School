@@ -34,7 +34,7 @@ export default function LoginPage() {
         method: 'POST',
         body: JSON.stringify(data),
       });
-      router.replace('/users');
+      router.replace('/dashboard');
     } catch {
       setError('Невірний email або пароль');
     }
