@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3001';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 async function doFetch(path: string, options?: RequestInit): Promise<Response> {
   return fetch(`${BASE_URL}${path}`, {
