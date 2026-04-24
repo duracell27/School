@@ -110,7 +110,7 @@ export class AuthService {
     const cookieOptions = {
       httpOnly: true,
       secure: isProd,
-      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
+      sameSite: 'strict' as const,
     };
 
     res.cookie('access_token', accessToken, {
@@ -121,7 +121,7 @@ export class AuthService {
     res.cookie('refresh_token', newRefreshToken, {
       ...cookieOptions,
       maxAge: 14 * 24 * 60 * 60 * 1000,
-      path: '/auth/refresh',
+      path: process.env.REFRESH_COOKIE_PATH ?? '/auth/refresh',
     });
 
     return { access_token: accessToken, user: userData };
