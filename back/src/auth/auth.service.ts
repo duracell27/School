@@ -106,10 +106,11 @@ export class AuthService {
     const hashed = await bcrypt.hash(newRefreshToken, 10);
     await this.users.updateRefreshToken(userId, hashed);
 
+    const isProd = process.env.NODE_ENV === 'production';
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict' as const,
+      secure: isProd,
+      sameSite: (isProd ? 'none' : 'lax') as 'none' | 'lax',
     };
 
     res.cookie('access_token', accessToken, {
