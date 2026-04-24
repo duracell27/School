@@ -180,8 +180,9 @@ export class DashboardService {
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
     const activeWhere: Prisma.ChildWhereInput = {
-      ...teacherFilter,
-      teacherId: { not: null },
+      ...(userRole === Role.TEACHER
+        ? { teacherId: userId }
+        : { teacherId: { not: null } }),
       OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
     };
 
@@ -217,7 +218,6 @@ export class DashboardService {
         avatar: true,
         children: {
           where: {
-            teacherId: { not: null },
             OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
           },
           select: { id: true },
