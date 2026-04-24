@@ -82,6 +82,19 @@ describe('buildChartSkeleton', () => {
     expect(points[0].label).toBe('Січ');
     expect(points[11].label).toBe('Груд');
   });
+
+  it('month: 4 weeks for Feb 2026 (28 days)', () => {
+    const points = buildChartSkeleton('month', new Date(2026, 1, 1));
+    expect(points).toHaveLength(4);
+    expect(points[0].label).toBe('Тиж. 1');
+    expect(points[3].label).toBe('Тиж. 4');
+  });
+
+  it('month: 5 weeks for Mar 2026 (31 days)', () => {
+    const points = buildChartSkeleton('month', new Date(2026, 2, 1));
+    expect(points).toHaveLength(5);
+    expect(points[4].label).toBe('Тиж. 5');
+  });
 });
 
 describe('getLessonGroupKey', () => {
@@ -95,5 +108,13 @@ describe('getLessonGroupKey', () => {
     expect(getLessonGroupKey(new Date(2026, 3, 7), 'month')).toBe('Тиж. 1');
     expect(getLessonGroupKey(new Date(2026, 3, 8), 'month')).toBe('Тиж. 2');
     expect(getLessonGroupKey(new Date(2026, 3, 28), 'month')).toBe('Тиж. 4');
+    expect(getLessonGroupKey(new Date(2026, 2, 31), 'month')).toBe('Тиж. 5');
+  });
+
+  it('week: key matches skeleton label for same date', () => {
+    const monday = new Date(2026, 3, 20); // Mon Apr 20 2026
+    const skeleton = buildChartSkeleton('week', monday);
+    expect(getLessonGroupKey(monday, 'week')).toBe(skeleton[0].label);
+    expect(getLessonGroupKey(new Date(2026, 3, 26), 'week')).toBe(skeleton[6].label);
   });
 });
