@@ -4,12 +4,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-
-const BASE_URL = 'http://localhost:3001';
+import { apiFetch } from '@/lib/api';
 
 const schema = z.object({
   email: z.string().email('Невірний email'),
@@ -19,6 +19,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 export default function LoginPage() {
+  const router = useRouter();
   const [error, setError] = useState('');
   const {
     register,
@@ -28,16 +29,13 @@ export default function LoginPage() {
 
   async function onSubmit(data: FormValues) {
     setError('');
-    const res = await fetch(`${BASE_URL}/auth/login`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (res.ok) {
-      window.location.href = '/users';
-    } else {
+    try {
+      await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      router.replace('/users');
+    } catch {
       setError('Невірний email або пароль');
     }
   }
