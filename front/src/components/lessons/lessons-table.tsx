@@ -47,9 +47,9 @@ function StatusSelect({ lesson }: { lesson: Lesson }) {
       disabled={update.isPending}
     >
       <SelectTrigger
-        className={`h-7 w-36 text-xs font-medium border-0 shadow-none focus:ring-0 rounded-full px-2 ${STATUS_COLORS[lesson.status]}`}
+        className={`h-auto w-auto py-0.5 px-2 text-xs font-medium border-0 shadow-none focus:ring-0 rounded-full gap-1 ${STATUS_COLORS[lesson.status]}`}
       >
-        <SelectValue />
+        {STATUS_LABELS[lesson.status]}
       </SelectTrigger>
       <SelectContent>
         {ALL_STATUSES.map((s) => (
