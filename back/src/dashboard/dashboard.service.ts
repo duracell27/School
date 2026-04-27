@@ -26,44 +26,42 @@ function monthWeekLabel(weekNum: number, month: number, year: number): string {
   return `${startDay}-${endDay} ${UA_MONTHS_SHORT[month]}`;
 }
 
-export function getPeriodRange(period: Period): { start: Date; end: Date } {
-  const now = new Date();
+export function getPeriodRange(period: Period, ref: Date = new Date()): { start: Date; end: Date } {
   if (period === 'week') {
-    const day = now.getDay();
+    const day = ref.getDay();
     const diff = day === 0 ? -6 : 1 - day;
-    const start = new Date(now);
-    start.setDate(now.getDate() + diff);
+    const start = new Date(ref);
+    start.setDate(ref.getDate() + diff);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(start.getDate() + 7);
     return { start, end };
   }
   if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 1);
     return { start, end };
   }
-  const start = new Date(now.getFullYear(), 0, 1);
-  const end = new Date(now.getFullYear() + 1, 0, 1);
+  const start = new Date(ref.getFullYear(), 0, 1);
+  const end = new Date(ref.getFullYear() + 1, 0, 1);
   return { start, end };
 }
 
-export function getPrevPeriodRange(period: Period): { start: Date; end: Date } {
-  const now = new Date();
+export function getPrevPeriodRange(period: Period, ref: Date = new Date()): { start: Date; end: Date } {
   if (period === 'week') {
-    const { start } = getPeriodRange('week');
+    const { start } = getPeriodRange('week', ref);
     const prevEnd = new Date(start);
     const prevStart = new Date(start);
     prevStart.setDate(prevStart.getDate() - 7);
     return { start: prevStart, end: prevEnd };
   }
   if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth(), 1);
+    const start = new Date(ref.getFullYear(), ref.getMonth() - 1, 1);
+    const end = new Date(ref.getFullYear(), ref.getMonth(), 1);
     return { start, end };
   }
-  const start = new Date(now.getFullYear() - 1, 0, 1);
-  const end = new Date(now.getFullYear(), 0, 1);
+  const start = new Date(ref.getFullYear() - 1, 0, 1);
+  const end = new Date(ref.getFullYear(), 0, 1);
   return { start, end };
 }
 
@@ -123,9 +121,9 @@ export class DashboardService {
     });
   }
 
-  async getSummary(userId: string, userRole: Role, period: Period) {
-    const { start, end } = getPeriodRange(period);
-    const { start: prevStart, end: prevEnd } = getPrevPeriodRange(period);
+  async getSummary(userId: string, userRole: Role, period: Period, ref: Date = new Date()) {
+    const { start, end } = getPeriodRange(period, ref);
+    const { start: prevStart, end: prevEnd } = getPrevPeriodRange(period, ref);
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
@@ -154,8 +152,8 @@ export class DashboardService {
     return { earned, expected, earnedDelta };
   }
 
-  async getChart(userId: string, userRole: Role, period: Period): Promise<ChartPoint[]> {
-    const { start, end } = getPeriodRange(period);
+  async getChart(userId: string, userRole: Role, period: Period, ref: Date = new Date()): Promise<ChartPoint[]> {
+    const { start, end } = getPeriodRange(period, ref);
     const where: Prisma.LessonWhereInput = { startDate: { gte: start, lt: end } };
     if (userRole === Role.TEACHER) where.teacherId = userId;
 
@@ -217,8 +215,8 @@ export class DashboardService {
     };
   }
 
-  async getTeachers(period: Period) {
-    const { start, end } = getPeriodRange(period);
+  async getTeachers(period: Period, ref: Date = new Date()) {
+    const { start, end } = getPeriodRange(period, ref);
     const now = new Date();
 
     const teachers = await this.prisma.user.findMany({

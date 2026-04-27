@@ -17,10 +17,11 @@ const STATUS_CONFIG = [
 
 interface LessonChartProps {
   period: Period;
+  date?: string;
 }
 
-export function LessonChart({ period }: LessonChartProps) {
-  const { data = [], isLoading } = useDashboardChart(period);
+export function LessonChart({ period, date }: LessonChartProps) {
+  const { data = [], isLoading } = useDashboardChart(period, date);
 
   return (
     <Card className="col-span-2">

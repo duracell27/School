@@ -8,10 +8,11 @@ import type { Period } from '@/types/dashboard';
 
 interface TeachersTableProps {
   period: Period;
+  date?: string;
 }
 
-export function TeachersTable({ period }: TeachersTableProps) {
-  const { data = [], isLoading } = useTeachersTable(period);
+export function TeachersTable({ period, date }: TeachersTableProps) {
+  const { data = [], isLoading } = useTeachersTable(period, date);
 
   return (
     <Card className="col-span-full">

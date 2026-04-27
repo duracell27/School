@@ -24,13 +24,15 @@ export class DashboardController {
   @Get('summary')
   getSummary(@Query() query: DashboardQueryDto, @Req() req: Request) {
     const user = req['user'] as JwtUser;
-    return this.dashboard.getSummary(user.sub, user.role, query.period);
+    const ref = query.date ? new Date(query.date) : new Date();
+    return this.dashboard.getSummary(user.sub, user.role, query.period, ref);
   }
 
   @Get('chart')
   getChart(@Query() query: DashboardQueryDto, @Req() req: Request) {
     const user = req['user'] as JwtUser;
-    return this.dashboard.getChart(user.sub, user.role, query.period);
+    const ref = query.date ? new Date(query.date) : new Date();
+    return this.dashboard.getChart(user.sub, user.role, query.period, ref);
   }
 
   @Get('children-stats')
@@ -42,6 +44,7 @@ export class DashboardController {
   @Get('teachers')
   @Roles(Role.ADMIN)
   getTeachers(@Query() query: DashboardQueryDto) {
-    return this.dashboard.getTeachers(query.period);
+    const ref = query.date ? new Date(query.date) : new Date();
+    return this.dashboard.getTeachers(query.period, ref);
   }
 }
