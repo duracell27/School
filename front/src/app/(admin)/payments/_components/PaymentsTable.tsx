@@ -1,0 +1,133 @@
+'use client';
+
+import { useState } from 'react';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ChildAvatar } from '@/components/children/child-avatar';
+import { UserAvatar } from '@/components/users/user-avatar';
+import { useDeletePayment } from '@/lib/payments';
+import { formatCurrency } from '@/lib/format';
+import type { Payment } from '@/types/payment';
+
+type SortKey = 'date' | 'child' | 'teacher' | 'amount';
+type SortDir = 'asc' | 'desc' | null;
+
+function SortBtn({ label, col, activeCol, dir, onToggle }: {
+  label: string; col: SortKey; activeCol: SortKey | null;
+  dir: SortDir; onToggle: (c: SortKey) => void;
+}) {
+  const active = activeCol === col;
+  const Icon = active && dir === 'asc' ? ArrowUp : active && dir === 'desc' ? ArrowDown : ArrowUpDown;
+  return (
+    <button onClick={() => onToggle(col)} className="flex items-center gap-1 hover:opacity-80">
+      {label} <Icon size={13} className={active ? 'opacity-100' : 'opacity-40'} />
+    </button>
+  );
+}
+
+interface PaymentsTableProps {
+  payments: Payment[];
+  onEdit: (payment: Payment) => void;
+}
+
+export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const deletePayment = useDeletePayment();
+
+  function handleSort(key: SortKey) {
+    if (sortKey !== key) { setSortKey(key); setSortDir('asc'); }
+    else if (sortDir === 'asc') setSortDir('desc');
+    else if (sortDir === 'desc') { setSortDir(null); setSortKey(null); }
+    else setSortDir('asc');
+  }
+
+  const sorted = sortKey
+    ? [...payments].sort((a, b) => {
+        let cmp = 0;
+        if (sortKey === 'date') cmp = a.date.localeCompare(b.date);
+        else if (sortKey === 'child') cmp = a.child.name.localeCompare(b.child.name, 'uk');
+        else if (sortKey === 'teacher') cmp = a.teacher.name.localeCompare(b.teacher.name, 'uk');
+        else if (sortKey === 'amount') cmp = Number(a.amount) - Number(b.amount);
+        return sortDir === 'asc' ? cmp : -cmp;
+      })
+    : payments;
+
+  function fmtDate(iso: string) {
+    return new Date(iso).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead><SortBtn label="Дата" col="date" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+          <TableHead><SortBtn label="Дитина" col="child" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+          <TableHead><SortBtn label="Вчитель" col="teacher" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+          <TableHead><SortBtn label="Сума" col="amount" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+          <TableHead>Закрито</TableHead>
+          <TableHead>Передоплата</TableHead>
+          <TableHead>Нотатки</TableHead>
+          <TableHead className="text-right">Дії</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {sorted.map(payment => {
+          const debtCount = payment.lessons.filter(l => l.type === 'DEBT').length;
+          const prepaidCount = payment.lessons.filter(l => l.type === 'PREPAID').length;
+          return (
+            <TableRow key={payment.id}>
+              <TableCell>{fmtDate(payment.date)}</TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <ChildAvatar name={payment.child.name} avatar={payment.child.avatar} size={24} />
+                  <span className="font-medium text-sm">{payment.child.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <UserAvatar name={payment.teacher.name} avatar={payment.teacher.avatar} size={24} />
+                  <span className="text-sm">{payment.teacher.name}</span>
+                </div>
+              </TableCell>
+              <TableCell className="font-medium tabular-nums">{formatCurrency(Number(payment.amount))}</TableCell>
+              <TableCell>
+                {debtCount > 0 ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                    {debtCount} зан.
+                  </span>
+                ) : '—'}
+              </TableCell>
+              <TableCell>
+                {prepaidCount > 0 ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    {prepaidCount} зан.
+                  </span>
+                ) : '—'}
+              </TableCell>
+              <TableCell className="text-sm text-gray-500 max-w-32 truncate">{payment.notes ?? '—'}</TableCell>
+              <TableCell className="text-right space-x-2">
+                <Button variant="outline" size="sm" onClick={() => onEdit(payment)}>Редагувати</Button>
+                <Button
+                  variant="destructive" size="sm"
+                  onClick={() => deletePayment.mutate(payment.id)}
+                  disabled={deletePayment.isPending}
+                >
+                  Видалити
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+        {payments.length === 0 && (
+          <TableRow>
+            <TableCell colSpan={8} className="text-center text-gray-400 py-8">Оплат не знайдено</TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
+  );
+}

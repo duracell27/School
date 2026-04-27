@@ -20,6 +20,7 @@ const navItems = [
   { href: '/children', label: 'Діти' },
   { href: '/lessons', label: 'Уроки', showBadge: true },
   { href: '/lesson-prices', label: 'Вартість заняття' },
+  { href: '/payments', label: 'Оплати' },
 ];
 
 function NavBadge({ count }: { count: number }) {
