@@ -1,4 +1,5 @@
 export type LessonStatus = 'PLANNED' | 'CONDUCTED' | 'CANCELLED' | 'RESCHEDULED';
+export type PaymentStatus = 'PAID' | 'UNPAID' | 'PREPAID' | null;
 
 export interface LessonChild {
   id: string;
@@ -24,6 +25,7 @@ export interface Lesson {
   price: string;
   originalStartDate: string | null;
   originalEndDate: string | null;
+  paymentStatus?: PaymentStatus;
   createdAt: string;
   updatedAt: string;
 }
