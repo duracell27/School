@@ -9,7 +9,8 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { useUpdateLesson } from '@/lib/lessons';
-import type { Lesson, LessonStatus } from '@/types/lesson';
+import { useSessionStore } from '@/store/session.store';
+import type { Lesson, LessonStatus, PaymentStatus } from '@/types/lesson';
 
 interface LessonsTableProps {
   lessons: Lesson[];
@@ -29,6 +30,18 @@ const STATUS_COLORS: Record<LessonStatus, string> = {
   CONDUCTED: 'bg-green-100 text-green-700',
   CANCELLED: 'bg-red-100 text-red-700',
   RESCHEDULED: 'bg-orange-100 text-orange-700',
+};
+
+const PAYMENT_STATUS_LABELS: Record<NonNullable<PaymentStatus>, string> = {
+  PAID: 'Оплачено',
+  UNPAID: 'Не оплачено',
+  PREPAID: 'Передоплачено',
+};
+
+const PAYMENT_STATUS_COLORS: Record<NonNullable<PaymentStatus>, string> = {
+  PAID: 'bg-green-100 text-green-700',
+  UNPAID: 'bg-red-100 text-red-700',
+  PREPAID: 'bg-blue-100 text-blue-700',
 };
 
 const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESCHEDULED'];
@@ -63,7 +76,7 @@ function fmtDateTime(dt: string | null) {
   });
 }
 
-type SortKey = 'child' | 'teacher' | 'status' | 'startDate';
+type SortKey = 'child' | 'teacher' | 'status' | 'startDate' | 'paymentStatus';
 type SortDir = 'asc' | 'desc' | null;
 
 function SortBtn({ label, col, activeCol, dir, onToggle }: {
@@ -79,9 +92,13 @@ function SortBtn({ label, col, activeCol, dir, onToggle }: {
   );
 }
 
+const paymentStatusOrder: Record<string, number> = { UNPAID: 0, PREPAID: 1, PAID: 2, null: 3 };
+
 export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const currentUser = useSessionStore((s) => s.user);
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   function handleSort(key: SortKey) {
     if (sortKey !== key) {
@@ -104,6 +121,9 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
         else if (sortKey === 'teacher') cmp = a.teacher.name.localeCompare(b.teacher.name, 'uk');
         else if (sortKey === 'status') cmp = a.status.localeCompare(b.status);
         else if (sortKey === 'startDate') cmp = a.startDate.localeCompare(b.startDate);
+        else if (sortKey === 'paymentStatus') {
+          cmp = (paymentStatusOrder[a.paymentStatus ?? 'null'] ?? 3) - (paymentStatusOrder[b.paymentStatus ?? 'null'] ?? 3);
+        }
         return sortDir === 'asc' ? cmp : -cmp;
       })
     : lessons;
@@ -115,6 +135,11 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           <TableHead><SortBtn label="Учень" col="child" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
           <TableHead><SortBtn label="Вчитель" col="teacher" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
           <TableHead><SortBtn label="Статус" col="status" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+          {isAdmin && (
+            <TableHead>
+              <SortBtn label="Оплата" col="paymentStatus" activeCol={sortKey} dir={sortDir} onToggle={handleSort} />
+            </TableHead>
+          )}
           <TableHead><SortBtn label="Початок" col="startDate" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
           <TableHead>Кінець</TableHead>
           <TableHead>Ціна</TableHead>
@@ -146,6 +171,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 )}
               </div>
             </TableCell>
+            {isAdmin && (
+              <TableCell>
+                {lesson.paymentStatus ? (
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                    {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+                  </span>
+                ) : null}
+              </TableCell>
+            )}
             <TableCell>
               <div className="flex flex-col gap-0.5">
                 <span>{fmtDateTime(lesson.startDate)}</span>
@@ -171,7 +205,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
         ))}
         {lessons.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
+            <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
           </TableRow>
         )}
       </TableBody>
