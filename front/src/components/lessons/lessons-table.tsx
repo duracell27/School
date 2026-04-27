@@ -5,9 +5,13 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { useUpdateLesson } from '@/lib/lessons';
 import type { Lesson, LessonStatus } from '@/types/lesson';
 
 interface LessonsTableProps {
@@ -29,6 +33,36 @@ const STATUS_COLORS: Record<LessonStatus, string> = {
   CANCELLED: 'bg-red-100 text-red-700',
   RESCHEDULED: 'bg-orange-100 text-orange-700',
 };
+
+const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESCHEDULED'];
+
+function StatusSelect({ lesson }: { lesson: Lesson }) {
+  const update = useUpdateLesson();
+  return (
+    <Select
+      value={lesson.status}
+      onValueChange={(value) =>
+        update.mutate({ id: lesson.id, data: { status: value as LessonStatus } })
+      }
+      disabled={update.isPending}
+    >
+      <SelectTrigger
+        className={`h-7 w-36 text-xs font-medium border-0 shadow-none focus:ring-0 rounded-full px-2 ${STATUS_COLORS[lesson.status]}`}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {ALL_STATUSES.map((s) => (
+          <SelectItem key={s} value={s} className="text-xs cursor-pointer">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[s]}`}>
+              {STATUS_LABELS[s]}
+            </span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
 
 function isOverdue(lesson: Lesson): boolean {
   return lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
@@ -119,9 +153,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
             </TableCell>
             <TableCell>
               <div className="flex flex-col gap-1">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[lesson.status]}`}>
-                  {STATUS_LABELS[lesson.status]}
-                </span>
+                <StatusSelect lesson={lesson} />
                 {isOverdue(lesson) && (
                   <span className="text-xs text-red-600 font-medium">Не оброблено!</span>
                 )}
