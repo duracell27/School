@@ -5,9 +5,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
@@ -39,28 +36,18 @@ const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESC
 function StatusSelect({ lesson }: { lesson: Lesson }) {
   const update = useUpdateLesson();
   return (
-    <Select
+    <select
       value={lesson.status}
-      onValueChange={(value) =>
-        update.mutate({ id: lesson.id, data: { status: value as LessonStatus } })
+      onChange={(e) =>
+        update.mutate({ id: lesson.id, data: { status: e.target.value as LessonStatus } })
       }
       disabled={update.isPending}
+      className={`cursor-pointer py-0.5 pl-2 pr-1 text-xs font-medium rounded-full border-0 outline-none disabled:opacity-50 ${STATUS_COLORS[lesson.status]}`}
     >
-      <SelectTrigger
-        className={`h-auto w-auto py-0.5 px-2 text-xs font-medium border-0 shadow-none focus:ring-0 rounded-full gap-1 ${STATUS_COLORS[lesson.status]}`}
-      >
-        {STATUS_LABELS[lesson.status]}
-      </SelectTrigger>
-      <SelectContent>
-        {ALL_STATUSES.map((s) => (
-          <SelectItem key={s} value={s} className="text-xs cursor-pointer">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[s]}`}>
-              {STATUS_LABELS[s]}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      {ALL_STATUSES.map((s) => (
+        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+      ))}
+    </select>
   );
 }
 
