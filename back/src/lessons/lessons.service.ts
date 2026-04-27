@@ -3,11 +3,12 @@ import {
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
 
-const lessonSelect = {
+const lessonSelectBase = {
   id: true,
   child: { select: { id: true, name: true, avatar: true, timezone: true, country: true } },
   teacher: { select: { id: true, name: true, avatar: true } },
@@ -21,9 +22,32 @@ const lessonSelect = {
   updatedAt: true,
 } satisfies Prisma.LessonSelect;
 
+const lessonSelectWithPayments = {
+  ...lessonSelectBase,
+  paymentLessons: { select: { amount: true, type: true } },
+} satisfies Prisma.LessonSelect;
+
+function computePaymentStatus(lesson: {
+  status: string;
+  price: unknown;
+  paymentLessons: Array<{ amount: unknown; type: string }>;
+}): 'PAID' | 'UNPAID' | 'PREPAID' | null {
+  if (lesson.status === 'CONDUCTED') {
+    const covered = lesson.paymentLessons.reduce((sum, pl) => sum + Number(pl.amount), 0);
+    return covered >= Number(lesson.price) ? 'PAID' : 'UNPAID';
+  }
+  if (lesson.status === 'PLANNED') {
+    return lesson.paymentLessons.some(pl => pl.type === 'PREPAID') ? 'PREPAID' : null;
+  }
+  return null;
+}
+
 @Injectable()
 export class LessonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payments: PaymentsService,
+  ) {}
 
   findAll(userId: string, userRole: Role, query: LessonQueryDto) {
     const { teacherId, weekStart } = query;
@@ -42,9 +66,23 @@ export class LessonsService {
       where.startDate = { gte: start, lt: end };
     }
 
+    if (userRole === Role.ADMIN) {
+      return this.prisma.lesson.findMany({
+        where,
+        select: lessonSelectWithPayments,
+        orderBy: { startDate: 'asc' },
+      }).then(lessons =>
+        lessons.map(l => ({
+          ...l,
+          paymentStatus: computePaymentStatus(l),
+          paymentLessons: undefined,
+        }))
+      );
+    }
+
     return this.prisma.lesson.findMany({
       where,
-      select: lessonSelect,
+      select: lessonSelectBase,
       orderBy: { startDate: 'asc' },
     });
   }
@@ -52,7 +90,7 @@ export class LessonsService {
   async findOne(id: string) {
     const lesson = await this.prisma.lesson.findUnique({
       where: { id },
-      select: lessonSelect,
+      select: lessonSelectBase,
     });
     if (!lesson) throw new NotFoundException('Lesson not found');
     return lesson;
@@ -100,7 +138,7 @@ export class LessonsService {
     }
 
     const { startDate, endDate, originalStartDate, originalEndDate, ...rest } = dto;
-    return this.prisma.lesson.create({
+    const lesson = await this.prisma.lesson.create({
       data: {
         ...rest,
         startDate: new Date(startDate),
@@ -108,8 +146,10 @@ export class LessonsService {
         ...(originalStartDate ? { originalStartDate: new Date(originalStartDate) } : {}),
         ...(originalEndDate ? { originalEndDate: new Date(originalEndDate) } : {}),
       },
-      select: lessonSelect,
+      select: lessonSelectBase,
     });
+    await this.payments.reallocate(dto.childId, dto.teacherId);
+    return lesson;
   }
 
   async update(id: string, dto: UpdateLessonDto, userId: string, userRole: Role) {
@@ -120,7 +160,7 @@ export class LessonsService {
     }
 
     const { startDate, endDate, originalStartDate, originalEndDate, ...rest } = dto;
-    return this.prisma.lesson.update({
+    const updated = await this.prisma.lesson.update({
       where: { id },
       data: {
         ...rest,
@@ -129,8 +169,10 @@ export class LessonsService {
         ...(originalStartDate !== undefined ? { originalStartDate: new Date(originalStartDate) } : {}),
         ...(originalEndDate !== undefined ? { originalEndDate: new Date(originalEndDate) } : {}),
       },
-      select: lessonSelect,
+      select: lessonSelectBase,
     });
+    await this.payments.reallocate(lesson.child.id, lesson.teacher.id);
+    return updated;
   }
 
   async remove(id: string, userId: string, userRole: Role): Promise<void> {
@@ -141,5 +183,6 @@ export class LessonsService {
     }
 
     await this.prisma.lesson.delete({ where: { id } });
+    await this.payments.reallocate(lesson.child.id, lesson.teacher.id);
   }
 }
