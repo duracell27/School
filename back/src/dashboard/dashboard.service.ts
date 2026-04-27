@@ -17,6 +17,14 @@ function emptyPoint(label: string): ChartPoint {
 }
 
 const UA_MONTHS = ['Січ', 'Лют', 'Бер', 'Квіт', 'Трав', 'Черв', 'Лип', 'Серп', 'Вер', 'Жовт', 'Лист', 'Груд'];
+const UA_MONTHS_SHORT = ['січ', 'лют', 'бер', 'квіт', 'трав', 'черв', 'лип', 'серп', 'вер', 'жовт', 'лист', 'груд'];
+
+function monthWeekLabel(weekNum: number, month: number, year: number): string {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = (weekNum - 1) * 7 + 1;
+  const endDay = Math.min(weekNum * 7, daysInMonth);
+  return `${startDay}-${endDay} ${UA_MONTHS_SHORT[month]}`;
+}
 
 export function getPeriodRange(period: Period): { start: Date; end: Date } {
   const now = new Date();
@@ -71,7 +79,9 @@ export function buildChartSkeleton(period: Period, periodStart: Date): ChartPoin
   if (period === 'month') {
     const daysInMonth = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0).getDate();
     const numWeeks = Math.ceil(daysInMonth / 7);
-    return Array.from({ length: numWeeks }, (_, i) => emptyPoint(`Тиж. ${i + 1}`));
+    return Array.from({ length: numWeeks }, (_, i) =>
+      emptyPoint(monthWeekLabel(i + 1, periodStart.getMonth(), periodStart.getFullYear())),
+    );
   }
   return UA_MONTHS.map((m) => emptyPoint(m));
 }
@@ -81,7 +91,8 @@ export function getLessonGroupKey(lessonDate: Date, period: Period): string {
     return lessonDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
   }
   if (period === 'month') {
-    return `Тиж. ${Math.ceil(lessonDate.getDate() / 7)}`;
+    const weekNum = Math.ceil(lessonDate.getDate() / 7);
+    return monthWeekLabel(weekNum, lessonDate.getMonth(), lessonDate.getFullYear());
   }
   return UA_MONTHS[lessonDate.getMonth()];
 }
@@ -211,7 +222,7 @@ export class DashboardService {
     const now = new Date();
 
     const teachers = await this.prisma.user.findMany({
-      where: { role: 'TEACHER', status: 'WORKING' },
+      where: { role: { in: [Role.TEACHER, Role.ADMIN] }, status: 'WORKING' },
       select: {
         id: true,
         name: true,

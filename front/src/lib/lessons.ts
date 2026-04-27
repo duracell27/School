@@ -22,7 +22,10 @@ export function useCreateLesson() {
   return useMutation({
     mutationFn: (data: CreateLessonPayload) =>
       apiFetch<Lesson>('/lessons', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 
@@ -31,7 +34,10 @@ export function useUpdateLesson() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateLessonPayload }) =>
       apiFetch<Lesson>(`/lessons/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
   });
 }
 

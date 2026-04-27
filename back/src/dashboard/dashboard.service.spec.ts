@@ -83,17 +83,17 @@ describe('buildChartSkeleton', () => {
     expect(points[11].label).toBe('Груд');
   });
 
-  it('month: 4 weeks for Feb 2026 (28 days)', () => {
+  it('month: 4 weeks for Feb 2026 (28 days) with date-range labels', () => {
     const points = buildChartSkeleton('month', new Date(2026, 1, 1));
     expect(points).toHaveLength(4);
-    expect(points[0].label).toBe('Тиж. 1');
-    expect(points[3].label).toBe('Тиж. 4');
+    expect(points[0].label).toBe('1-7 лют');
+    expect(points[3].label).toBe('22-28 лют');
   });
 
-  it('month: 5 weeks for Mar 2026 (31 days)', () => {
+  it('month: 5 weeks for Mar 2026 (31 days), last week ends on 31', () => {
     const points = buildChartSkeleton('month', new Date(2026, 2, 1));
     expect(points).toHaveLength(5);
-    expect(points[4].label).toBe('Тиж. 5');
+    expect(points[4].label).toBe('29-31 бер');
   });
 });
 
@@ -103,12 +103,14 @@ describe('getLessonGroupKey', () => {
     expect(getLessonGroupKey(date, 'year')).toBe('Квіт');
   });
 
-  it('month: returns Тиж. N based on day', () => {
-    expect(getLessonGroupKey(new Date(2026, 3, 1), 'month')).toBe('Тиж. 1');
-    expect(getLessonGroupKey(new Date(2026, 3, 7), 'month')).toBe('Тиж. 1');
-    expect(getLessonGroupKey(new Date(2026, 3, 8), 'month')).toBe('Тиж. 2');
-    expect(getLessonGroupKey(new Date(2026, 3, 28), 'month')).toBe('Тиж. 4');
-    expect(getLessonGroupKey(new Date(2026, 2, 31), 'month')).toBe('Тиж. 5');
+  it('month: returns date-range label matching skeleton', () => {
+    // April 2026 (30 days)
+    expect(getLessonGroupKey(new Date(2026, 3, 1), 'month')).toBe('1-7 квіт');
+    expect(getLessonGroupKey(new Date(2026, 3, 7), 'month')).toBe('1-7 квіт');
+    expect(getLessonGroupKey(new Date(2026, 3, 8), 'month')).toBe('8-14 квіт');
+    expect(getLessonGroupKey(new Date(2026, 3, 28), 'month')).toBe('22-28 квіт');
+    // March 2026 (31 days) — week 5 ends on 31
+    expect(getLessonGroupKey(new Date(2026, 2, 31), 'month')).toBe('29-31 бер');
   });
 
   it('week: key matches skeleton label for same date', () => {
