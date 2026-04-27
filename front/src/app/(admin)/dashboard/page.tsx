@@ -77,7 +77,11 @@ export default function DashboardPage() {
   const isAdmin = currentUser?.role === 'ADMIN';
 
   const referenceDate = useMemo(() => computeReferenceDate(period, offset), [period, offset]);
-  const dateParam = referenceDate.toISOString().split('T')[0];
+  const dateParam = [
+    referenceDate.getFullYear(),
+    String(referenceDate.getMonth() + 1).padStart(2, '0'),
+    String(referenceDate.getDate()).padStart(2, '0'),
+  ].join('-');
   const periodLabel = useMemo(() => formatPeriodLabel(period, referenceDate), [period, referenceDate]);
 
   function handlePeriodChange(p: Period) {
