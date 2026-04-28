@@ -1,4 +1,13 @@
 export type LessonStatus = 'PLANNED' | 'CONDUCTED' | 'CANCELLED' | 'RESCHEDULED';
+
+export interface ChildBalance {
+  child: { id: string; name: string; avatar: string | null };
+  teacher: { id: string; name: string; avatar: string | null };
+  debtCount: number;
+  debtUah: number;
+  prepaidCount: number;
+  leftoverUah: number;
+}
 export type PaymentStatus = 'PAID' | 'UNPAID' | 'PREPAID' | null;
 
 export interface LessonChild {

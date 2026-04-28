@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 import type {
-  Lesson, LessonPrice,
+  Lesson, LessonPrice, ChildBalance,
   CreateLessonPayload, UpdateLessonPayload,
   CreateLessonPricePayload, UpdateLessonPricePayload,
 } from '@/types/lesson';
@@ -25,6 +25,8 @@ export function useCreateLesson() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
     },
   });
 }
@@ -37,6 +39,8 @@ export function useUpdateLesson() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
     },
   });
 }
@@ -45,7 +49,11 @@ export function useDeleteLesson() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/lessons/${id}`, { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lessons'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
+    },
   });
 }
 
@@ -96,6 +104,13 @@ export function useDeleteLessonPrice() {
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/lesson-prices/${id}`, { method: 'DELETE' }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['lesson-prices'] }),
+  });
+}
+
+export function useChildBalances() {
+  return useQuery({
+    queryKey: ['child-balances'],
+    queryFn: () => apiFetch<ChildBalance[]>('/lessons/child-balances'),
   });
 }
 

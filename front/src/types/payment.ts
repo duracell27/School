@@ -40,6 +40,8 @@ export interface AllocationPreview {
   paymentLeftover: number;
   nextLessonShortfall: number;
   schoolBalance: number;
+  virtualPrepaidLessons: number;
+  lessonPrice: number | null;
 }
 
 export interface SchoolTransaction {

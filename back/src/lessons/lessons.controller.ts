@@ -35,6 +35,12 @@ export class LessonsController {
     return this.lessons.getOverdueCount(user.sub, user.role);
   }
 
+  @Get('child-balances')
+  @Roles(Role.ADMIN)
+  getChildBalances() {
+    return this.lessons.getChildBalances();
+  }
+
   // Defined before :id to avoid routing conflict
   @Get('price-suggestion')
   getPriceSuggestion(

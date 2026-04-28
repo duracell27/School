@@ -3,7 +3,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaymentsService } from '../payments/payments.service';
+import { PaymentsService, computeAllocation } from '../payments/payments.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
@@ -110,6 +110,131 @@ export class LessonsService {
       orderBy: { effectiveDate: 'desc' },
     });
     return lp ? Number(lp.price) : null;
+  }
+
+  async getChildBalances() {
+    const children = await this.prisma.child.findMany({
+      where: { teacherId: { not: null } },
+      select: {
+        id: true, name: true, avatar: true, teacherId: true,
+        teacher: { select: { id: true, name: true, avatar: true } },
+      },
+    });
+
+    const childIds = children.map(c => c.id);
+    const pairKey = (cId: string, tId: string) => `${cId}:${tId}`;
+
+    const [payments, lessons, lessonPrices] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: { childId: { in: childIds } },
+        orderBy: { date: 'asc' },
+        select: { id: true, childId: true, teacherId: true, amount: true },
+      }),
+      this.prisma.lesson.findMany({
+        where: { childId: { in: childIds }, status: { in: ['CONDUCTED', 'PLANNED'] } },
+        orderBy: { startDate: 'asc' },
+        select: { id: true, childId: true, teacherId: true, price: true, status: true },
+      }),
+      this.prisma.lessonPrice.findMany({
+        where: { childId: { in: childIds } },
+        orderBy: { effectiveDate: 'desc' },
+        select: { childId: true, teacherId: true, price: true },
+      }),
+    ]);
+
+    // Most recent lesson price per pair (list is already desc by effectiveDate)
+    const priceByPair = new Map<string, number>();
+    for (const lp of lessonPrices) {
+      const key = pairKey(lp.childId, lp.teacherId);
+      if (!priceByPair.has(key)) priceByPair.set(key, Number(lp.price));
+    }
+
+    const paymentsByPair = new Map<string, Array<{ id: string; amount: number }>>();
+    for (const p of payments) {
+      const key = pairKey(p.childId, p.teacherId);
+      if (!paymentsByPair.has(key)) paymentsByPair.set(key, []);
+      paymentsByPair.get(key)!.push({ id: p.id, amount: Number(p.amount) });
+    }
+
+    const lessonsByPair = new Map<string, Array<{ id: string; price: number; status: 'CONDUCTED' | 'PLANNED' }>>();
+    for (const l of lessons) {
+      const key = pairKey(l.childId, l.teacherId);
+      if (!lessonsByPair.has(key)) lessonsByPair.set(key, []);
+      lessonsByPair.get(key)!.push({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' });
+    }
+
+    return children
+      .filter(c => c.teacher !== null)
+      .map(c => {
+        const key = pairKey(c.id, c.teacherId!);
+        const pairPayments = paymentsByPair.get(key) ?? [];
+        const pairLessons = lessonsByPair.get(key) ?? [];
+
+        const records = computeAllocation(pairPayments, pairLessons);
+
+        const lessonDebt = new Map<string, number>();
+        const lessonPrepaid = new Map<string, number>();
+        for (const r of records) {
+          if (r.type === 'DEBT') lessonDebt.set(r.lessonId, (lessonDebt.get(r.lessonId) ?? 0) + r.amount);
+          else lessonPrepaid.set(r.lessonId, (lessonPrepaid.get(r.lessonId) ?? 0) + r.amount);
+        }
+
+        let totalDebtUah = 0;
+        let prepaidCount = 0;
+        for (const lesson of pairLessons) {
+          if (lesson.status === 'CONDUCTED') {
+            const paid = lessonDebt.get(lesson.id) ?? 0;
+            if (paid < lesson.price) {
+              totalDebtUah = Math.round((totalDebtUah + lesson.price - paid) * 100) / 100;
+            }
+          }
+          if (lesson.status === 'PLANNED' && (lessonPrepaid.get(lesson.id) ?? 0) > 0) prepaidCount++;
+        }
+
+        // Leftover money not yet assigned to any lesson
+        const totalPaid = pairPayments.reduce((s, p) => s + p.amount, 0);
+        const totalAllocated = records.reduce((s, r) => s + r.amount, 0);
+        const leftover = Math.round((totalPaid - totalAllocated) * 100) / 100;
+
+        // Price source priority: LessonPrice table → most recent lesson's manual price
+        const lessonPrice = priceByPair.get(key)
+          ?? (pairLessons.length > 0 ? pairLessons[pairLessons.length - 1].price : undefined);
+
+        const round = (n: number) => Math.round(n * 100) / 100;
+        const floorLessons = (uah: number) =>
+          lessonPrice && lessonPrice > 0
+            ? Math.floor(Math.round(uah * 100) / Math.round(lessonPrice * 100))
+            : 0;
+
+        // Debt: split into full-lesson count + fractional UAH remainder
+        let debtCount = 0;
+        let debtUah = 0;
+        if (totalDebtUah > 0) {
+          debtCount = floorLessons(totalDebtUah);
+          debtUah = lessonPrice
+            ? round(totalDebtUah - debtCount * lessonPrice)
+            : totalDebtUah;
+        }
+
+        // Prepaid: actual prepaid lessons + virtual from leftover
+        let leftoverUah = 0;
+        if (leftover > 0) {
+          const virtualLessons = floorLessons(leftover);
+          prepaidCount += virtualLessons;
+          leftoverUah = lessonPrice
+            ? round(leftover - virtualLessons * lessonPrice)
+            : leftover;
+        }
+
+        return {
+          child: { id: c.id, name: c.name, avatar: c.avatar },
+          teacher: c.teacher!,
+          debtCount,
+          debtUah,
+          prepaidCount,
+          leftoverUah,
+        };
+      });
   }
 
   async getOverdueCount(userId: string, userRole: Role): Promise<number> {

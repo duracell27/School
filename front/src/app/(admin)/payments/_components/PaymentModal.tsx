@@ -10,13 +10,10 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { AllocationPreview } from './AllocationPreview';
 import { useUsers } from '@/lib/users';
 import { useChildren } from '@/lib/children';
-import {
-  useCreatePayment, useUpdatePayment, usePaymentPreview,
-  useWriteoff, useTopup,
-} from '@/lib/payments';
+import { useCreatePayment, useUpdatePayment } from '@/lib/payments';
+import { useLessonPrices } from '@/lib/lessons';
 import type { Payment } from '@/types/payment';
 
 interface PaymentModalProps {
@@ -55,38 +52,24 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
   }, [payment, open]);
 
   const { data: children = [] } = useChildren(teacherId ? { teacherId } : {});
-
-  const amountNum = parseFloat(amount) || 0;
-  const previewEnabled = !!childId && !!teacherId && amountNum > 0;
-
-  const { data: preview, isLoading: previewLoading } = usePaymentPreview(
-    previewEnabled
-      ? { childId, teacherId, amount: amountNum, excludePaymentId: payment?.id }
-      : null
-  );
+  const { data: lessonPrices = [] } = useLessonPrices();
+  const lessonPrice = (childId && teacherId)
+    ? lessonPrices.find(lp => lp.child.id === childId && lp.teacher.id === teacherId)
+    : null;
 
   const createPayment = useCreatePayment();
   const updatePayment = useUpdatePayment();
-  const writeoff = useWriteoff();
-  const topup = useTopup();
-
-  const [createdPaymentId, setCreatedPaymentId] = useState<string | null>(null);
-  const activePaymentId = payment?.id ?? createdPaymentId;
-
-  const isExact = preview && preview.paymentLeftover === 0 && preview.nextLessonShortfall === 0;
+  const isPending = createPayment.isPending || updatePayment.isPending;
 
   async function handleSave() {
     if (!childId || !teacherId || !amount || !date) return;
     if (isEdit) {
       await updatePayment.mutateAsync({ id: payment!.id, data: { amount, date, notes: notes || undefined } });
     } else {
-      const created = await createPayment.mutateAsync({ childId, teacherId, amount, date, notes: notes || undefined });
-      setCreatedPaymentId(created.id);
+      await createPayment.mutateAsync({ childId, teacherId, amount, date, notes: notes || undefined });
     }
-    if (isExact) onClose();
+    onClose();
   }
-
-  const isPending = createPayment.isPending || updatePayment.isPending;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -98,8 +81,14 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
         <div className="space-y-4 py-2">
           <div className="space-y-1">
             <Label>Вчитель</Label>
-            <Select value={teacherId} onValueChange={v => { setTeacherId(v ?? ''); setChildId(''); }}>
-              <SelectTrigger><SelectValue placeholder="Оберіть вчителя" /></SelectTrigger>
+            <Select value={teacherId} onValueChange={v => { setTeacherId(v ?? ''); setChildId(''); }} disabled={isEdit}>
+              <SelectTrigger>
+                <SelectValue placeholder="Оберіть вчителя">
+                  {teacherId
+                    ? (teachers.find(u => u.id === teacherId)?.name ?? payment?.teacher.name)
+                    : undefined}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 {teachers.map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
@@ -110,14 +99,25 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
 
           <div className="space-y-1">
             <Label>Дитина</Label>
-            <Select value={childId} onValueChange={v => setChildId(v ?? '')} disabled={!teacherId}>
-              <SelectTrigger><SelectValue placeholder="Оберіть дитину" /></SelectTrigger>
+            <Select value={childId} onValueChange={v => setChildId(v ?? '')} disabled={!teacherId || isEdit}>
+              <SelectTrigger>
+                <SelectValue placeholder="Оберіть дитину">
+                  {childId
+                    ? (children.find(c => c.id === childId)?.name ?? payment?.child.name)
+                    : undefined}
+                </SelectValue>
+              </SelectTrigger>
               <SelectContent>
                 {children.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {lessonPrice && (
+              <p className="text-sm text-muted-foreground">
+                Ціна за заняття: <span className="font-medium text-foreground">{lessonPrice.price} грн</span>
+              </p>
+            )}
           </div>
 
           <div className="space-y-1">
@@ -141,17 +141,6 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
             <Label>Нотатки (необов'язково)</Label>
             <Input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Коментар..." />
           </div>
-
-          {previewEnabled && (
-            <AllocationPreview
-              preview={preview}
-              isLoading={previewLoading}
-              onWriteoff={activePaymentId ? () => writeoff.mutate(activePaymentId) : undefined}
-              onTopup={activePaymentId ? () => topup.mutate(activePaymentId) : undefined}
-              writeoffPending={writeoff.isPending}
-              topupPending={topup.isPending}
-            />
-          )}
         </div>
 
         <DialogFooter>

@@ -198,7 +198,19 @@ export class PaymentsService {
     }
 
     const nextLesson = pqi < queue.length ? queue[pqi] : null;
-    const schoolBalance = await this.getSchoolBalance();
+    const [schoolBalance, currentPrice] = await Promise.all([
+      this.getSchoolBalance(),
+      this.prisma.lessonPrice.findFirst({
+        where: { childId, teacherId },
+        orderBy: { effectiveDate: 'desc' },
+        select: { price: true },
+      }),
+    ]);
+
+    const lessonPrice = currentPrice ? Number(currentPrice.price) : null;
+    const virtualPrepaidLessons = (lessonPrice && newRem >= lessonPrice)
+      ? Math.floor(Math.round(newRem * 100) / Math.round(lessonPrice * 100))
+      : 0;
 
     return {
       debtLessons,
@@ -206,6 +218,8 @@ export class PaymentsService {
       paymentLeftover: newRem,
       nextLessonShortfall: nextLesson ? nextLesson.remaining : 0,
       schoolBalance,
+      virtualPrepaidLessons,
+      lessonPrice,
     };
   }
 

@@ -23,15 +23,23 @@ export function AllocationPreview({
   }
   if (!preview) return null;
 
-  const { debtLessons, prepaidLessons, paymentLeftover, nextLessonShortfall, schoolBalance } = preview;
+  const {
+    debtLessons, prepaidLessons, paymentLeftover,
+    nextLessonShortfall, schoolBalance, virtualPrepaidLessons, lessonPrice,
+  } = preview;
   const totalCubes = debtLessons + prepaidLessons;
   const isExact = paymentLeftover === 0 && nextLessonShortfall === 0;
   const hasLeftover = paymentLeftover > 0;
   const hasShortfall = nextLessonShortfall > 0 && paymentLeftover === 0;
 
+  // Fractional leftover that can't cover a full future lesson
+  const fractionalLeftover = (virtualPrepaidLessons > 0 && lessonPrice)
+    ? Math.round((paymentLeftover - virtualPrepaidLessons * lessonPrice) * 100) / 100
+    : paymentLeftover;
+
   return (
     <div className="rounded-lg bg-gray-50 border p-3 space-y-2">
-      {totalCubes > 0 && (
+      {(totalCubes > 0 || virtualPrepaidLessons > 0) && (
         <div className="flex flex-wrap gap-1">
           {Array.from({ length: debtLessons }).map((_, i) => (
             <span key={`d${i}`} className="w-5 h-5 rounded-sm bg-red-400" title="Борг закрито" />
@@ -39,19 +47,27 @@ export function AllocationPreview({
           {Array.from({ length: prepaidLessons }).map((_, i) => (
             <span key={`p${i}`} className="w-5 h-5 rounded-sm bg-green-400" title="Передоплата" />
           ))}
+          {Array.from({ length: virtualPrepaidLessons }).map((_, i) => (
+            <span key={`v${i}`} className="w-5 h-5 rounded-sm border-2 border-green-400 bg-green-100" title="Передоплата (без розкладу)" />
+          ))}
         </div>
       )}
 
       <div className="text-xs text-gray-600 space-y-0.5">
         {debtLessons > 0 && <p>Закрито боргу: {debtLessons} заняття</p>}
         {prepaidLessons > 0 && <p>Передоплачено: {prepaidLessons} заняття</p>}
+        {virtualPrepaidLessons > 0 && (
+          <p className="text-green-700">
+            Передоплата {virtualPrepaidLessons} занять (буде застосовано автоматично)
+          </p>
+        )}
         {isExact && totalCubes > 0 && <p className="text-green-600 font-medium">Точне співпадіння ✓</p>}
       </div>
 
-      {hasLeftover && (
+      {hasLeftover && fractionalLeftover > 0 && (
         <div className="space-y-1">
           <p className="text-xs text-gray-500">
-            Залишок: <span className="font-medium">{formatCurrency(paymentLeftover)}</span>
+            Залишок: <span className="font-medium">{formatCurrency(fractionalLeftover)}</span>
             {nextLessonShortfall > 0 && ` (недостатньо для наступного — ${formatCurrency(nextLessonShortfall)})`}
           </p>
           <button
@@ -60,9 +76,15 @@ export function AllocationPreview({
             disabled={writeoffPending}
             className="text-xs px-2 py-1 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 disabled:opacity-50 transition-colors"
           >
-            Списати {formatCurrency(paymentLeftover)} на рахунок школи
+            Списати {formatCurrency(fractionalLeftover)} на рахунок школи
           </button>
         </div>
+      )}
+
+      {hasLeftover && virtualPrepaidLessons > 0 && fractionalLeftover === 0 && (
+        <p className="text-xs text-green-700">
+          Кошти зарезервовано — застосуються до наступних занять автоматично ✓
+        </p>
       )}
 
       {hasShortfall && (

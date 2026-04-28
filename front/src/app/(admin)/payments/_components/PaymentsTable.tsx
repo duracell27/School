@@ -68,16 +68,12 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
           <TableHead><SortBtn label="Дитина" col="child" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
           <TableHead><SortBtn label="Вчитель" col="teacher" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
           <TableHead><SortBtn label="Сума" col="amount" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-          <TableHead>Закрито</TableHead>
-          <TableHead>Передоплата</TableHead>
           <TableHead>Нотатки</TableHead>
           <TableHead className="text-right">Дії</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {sorted.map(payment => {
-          const debtCount = payment.lessons.filter(l => l.type === 'DEBT').length;
-          const prepaidCount = payment.lessons.filter(l => l.type === 'PREPAID').length;
           return (
             <TableRow key={payment.id}>
               <TableCell>{fmtDate(payment.date)}</TableCell>
@@ -94,20 +90,6 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
                 </div>
               </TableCell>
               <TableCell className="font-medium tabular-nums">{formatCurrency(Number(payment.amount))}</TableCell>
-              <TableCell>
-                {debtCount > 0 ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                    {debtCount} зан.
-                  </span>
-                ) : '—'}
-              </TableCell>
-              <TableCell>
-                {prepaidCount > 0 ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                    {prepaidCount} зан.
-                  </span>
-                ) : '—'}
-              </TableCell>
               <TableCell className="text-sm text-gray-500 max-w-32 truncate">{payment.notes ?? '—'}</TableCell>
               <TableCell className="text-right space-x-2">
                 <Button variant="outline" size="sm" onClick={() => onEdit(payment)}>Редагувати</Button>
@@ -124,7 +106,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
         })}
         {payments.length === 0 && (
           <TableRow>
-            <TableCell colSpan={8} className="text-center text-gray-400 py-8">Оплат не знайдено</TableCell>
+            <TableCell colSpan={6} className="text-center text-gray-400 py-8">Оплат не знайдено</TableCell>
           </TableRow>
         )}
       </TableBody>
