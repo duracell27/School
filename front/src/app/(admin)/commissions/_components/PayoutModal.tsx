@@ -32,7 +32,6 @@ export function PayoutModal({ teacherId, teacherName, open, onClose }: Props) {
       { teacherId, amount, notes: notes || undefined },
       {
         onSuccess: onClose,
-        onError: (err) => alert('Помилка збереження: ' + String(err)),
       },
     );
   }
@@ -69,6 +68,9 @@ export function PayoutModal({ teacherId, teacherName, open, onClose }: Props) {
               Виплатити
             </Button>
           </div>
+          {createPayout.isError && (
+            <p className="text-xs text-red-500">Помилка збереження. Спробуйте ще раз.</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

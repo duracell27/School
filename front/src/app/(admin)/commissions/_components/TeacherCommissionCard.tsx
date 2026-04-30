@@ -58,9 +58,9 @@ export function TeacherCommissionCard({ teacher }: Props) {
           <div>
             <p className="text-xs text-gray-400">Потенційно</p>
             <p className="font-semibold text-gray-400">
-              +{formatCurrency(balance.potentialEarnings)}
+              {formatCurrency(balance.potentialBalance)}
             </p>
-            <p className="text-xs text-gray-400">за непідтверджені заняття</p>
+            <p className="text-xs text-gray-400">+{formatCurrency(balance.potentialEarnings)} непідтверджені</p>
           </div>
         )}
       </div>

@@ -34,7 +34,6 @@ export function CommissionRateModal({ teacherId, open, onClose }: Props) {
       { teacherId, percentage, effectiveFrom },
       {
         onSuccess: onClose,
-        onError: (err) => alert('Помилка збереження: ' + String(err)),
       },
     );
   }
@@ -72,6 +71,9 @@ export function CommissionRateModal({ teacherId, open, onClose }: Props) {
               Зберегти
             </Button>
           </div>
+          {setCommission.isError && (
+            <p className="text-xs text-red-500">Помилка збереження. Спробуйте ще раз.</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
