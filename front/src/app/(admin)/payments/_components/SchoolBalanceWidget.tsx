@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/format';
 const REASON_LABELS: Record<string, string> = {
   OVERPAYMENT_WRITEOFF: 'Списання залишку',
   UNDERPAYMENT_TOPUP: 'Поповнення оплати',
+  LESSON_SCHOOL_SHARE: 'Частка школи з уроку',
 };
 
 export function SchoolBalanceWidget() {

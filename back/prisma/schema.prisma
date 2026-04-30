@@ -158,7 +158,7 @@ model SchoolTransaction {
   paymentId String?
   payment   Payment?                @relation(fields: [paymentId], references: [id], onDelete: SetNull)
   lessonId  String?
-  lesson    Lesson?                 @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  lesson    Lesson?                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   adminId   String?
   admin     User?                   @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: SetNull)
   note      String?

@@ -89,11 +89,16 @@ export class PaymentsService {
     ]);
 
     await this.prisma.$transaction(async (tx) => {
-      // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for conducted lessons in this pair
-      const conductedIds = lessons.filter(l => l.status === 'CONDUCTED').map(l => l.id);
-      if (conductedIds.length > 0) {
+      // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for ALL lessons in this pair
+      // (includes CANCELLED/RESCHEDULED lessons that may have had stale records)
+      const allPairLessonIds = await tx.lesson.findMany({
+        where: { childId, teacherId },
+        select: { id: true },
+      }).then(ls => ls.map(l => l.id));
+
+      if (allPairLessonIds.length > 0) {
         await tx.schoolTransaction.deleteMany({
-          where: { lessonId: { in: conductedIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
+          where: { lessonId: { in: allPairLessonIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
         });
       }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommissionDto } from './dto/create-commission.dto';
@@ -9,15 +9,22 @@ export class CommissionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async setCommission(dto: CreateCommissionDto, adminId: string) {
-    return this.prisma.teacherCommission.create({
-      data: {
-        teacherId: dto.teacherId,
-        percentage: new Prisma.Decimal(dto.percentage),
-        effectiveFrom: new Date(dto.effectiveFrom),
-        createdById: adminId,
-      },
-      select: { id: true, teacherId: true, percentage: true, effectiveFrom: true, createdAt: true },
-    });
+    try {
+      return await this.prisma.teacherCommission.create({
+        data: {
+          teacherId: dto.teacherId,
+          percentage: new Prisma.Decimal(dto.percentage),
+          effectiveFrom: new Date(dto.effectiveFrom),
+          createdById: adminId,
+        },
+        select: { id: true, teacherId: true, percentage: true, effectiveFrom: true, createdAt: true },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictException('Commission rate already exists for this teacher and date');
+      }
+      throw e;
+    }
   }
 
   async getCommissions(teacherId: string) {
