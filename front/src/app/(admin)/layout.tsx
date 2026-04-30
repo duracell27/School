@@ -21,6 +21,7 @@ const navItems = [
   { href: '/lessons', label: 'Уроки', showBadge: true },
   { href: '/lesson-prices', label: 'Вартість заняття' },
   { href: '/payments', label: 'Оплати' },
+  { href: '/commissions', label: 'Комісії' },
 ];
 
 function NavBadge({ count }: { count: number }) {
