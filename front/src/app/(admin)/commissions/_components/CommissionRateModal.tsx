@@ -1,0 +1,68 @@
+'use client';
+
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useSetCommission } from '@/lib/commissions';
+
+interface Props {
+  teacherId: string;
+  open: boolean;
+  onClose: () => void;
+}
+
+export function CommissionRateModal({ teacherId, open, onClose }: Props) {
+  const [percentage, setPercentage] = useState('');
+  const [effectiveFrom, setEffectiveFrom] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
+  const setCommission = useSetCommission();
+
+  function handleSave() {
+    if (!percentage || !effectiveFrom) return;
+    setCommission.mutate(
+      { teacherId, percentage, effectiveFrom },
+      { onSuccess: onClose },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Встановити ставку комісії</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Відсоток (%)</Label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              step={0.01}
+              placeholder="70"
+              value={percentage}
+              onChange={e => setPercentage(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Діє з</Label>
+            <Input
+              type="date"
+              value={effectiveFrom}
+              onChange={e => setEffectiveFrom(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Скасувати</Button>
+            <Button onClick={handleSave} disabled={setCommission.isPending || !percentage}>
+              Зберегти
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
