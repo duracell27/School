@@ -55,6 +55,18 @@ describe('CommissionsService', () => {
     );
   });
 
+  it('getPayouts returns payouts ordered desc by createdAt', async () => {
+    (prisma.teacherPayout.findMany as jest.Mock).mockResolvedValue([{ id: 'po1' }]);
+    const result = await service.getPayouts('t1');
+    expect(prisma.teacherPayout.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { teacherId: 't1' },
+        orderBy: { createdAt: 'desc' },
+      }),
+    );
+    expect(result).toHaveLength(1);
+  });
+
   it('getTeacherBalance returns zeroes when no data', async () => {
     (prisma.teacherEarning.aggregate as jest.Mock).mockResolvedValue({ _sum: { amount: null } });
     (prisma.teacherPayout.aggregate as jest.Mock).mockResolvedValue({ _sum: { amount: null } });

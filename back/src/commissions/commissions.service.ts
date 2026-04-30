@@ -51,6 +51,11 @@ export class CommissionsService {
     });
   }
 
+  /**
+   * NOTE: potentialEarnings uses the teacher's current commission rate applied to all
+   * conducted lessons not yet backed by a TeacherEarning record. This is an intentional
+   * approximation — for exact historical figures, use officialEarnings (backed by TeacherEarning).
+   */
   async getTeacherBalance(teacherId: string) {
     const [earningsAgg, payoutsAgg, currentCommission, conductedLessons] = await Promise.all([
       this.prisma.teacherEarning.aggregate({ where: { teacherId }, _sum: { amount: true } }),
