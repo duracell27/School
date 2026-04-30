@@ -39,9 +39,14 @@ model User {
   lessonPrices       LessonPrice[]
   paymentsAsTeacher  Payment[]           @relation("PaymentTeacher")
   paymentsCreated    Payment[]           @relation("PaymentCreator")
-  schoolTransactions SchoolTransaction[] @relation("SchoolTxAdmin")
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  schoolTransactions     SchoolTransaction[]  @relation("SchoolTxAdmin")
+  teacherCommissions     TeacherCommission[]  @relation("TeacherCommissionReceiver")
+  commissionsCreated     TeacherCommission[]  @relation("TeacherCommissionCreator")
+  teacherEarnings        TeacherEarning[]
+  teacherPayoutsReceived TeacherPayout[]      @relation("TeacherPayoutReceiver")
+  teacherPayoutsAdmined  TeacherPayout[]      @relation("TeacherPayoutAdmin")
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 }
 
 model Child {
@@ -75,9 +80,11 @@ model Lesson {
   price             Decimal
   originalStartDate DateTime?
   originalEndDate   DateTime?
-  paymentLessons    PaymentLesson[]
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  paymentLessons     PaymentLesson[]
+  teacherEarnings    TeacherEarning[]
+  schoolTransactions SchoolTransaction[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 
   @@index([teacherId, startDate])
   @@index([childId])
@@ -105,6 +112,7 @@ enum PaymentLessonType {
 enum SchoolTransactionReason {
   OVERPAYMENT_WRITEOFF
   UNDERPAYMENT_TOPUP
+  LESSON_SCHOOL_SHARE
 }
 
 model Payment {
@@ -134,9 +142,10 @@ model PaymentLesson {
   payment   Payment           @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   lessonId  String
   lesson    Lesson            @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  amount    Decimal
-  type      PaymentLessonType
-  createdAt DateTime          @default(now())
+  amount          Decimal
+  type            PaymentLessonType
+  teacherEarning  TeacherEarning?
+  createdAt       DateTime          @default(now())
 
   @@unique([paymentId, lessonId])
   @@index([lessonId])
@@ -148,8 +157,51 @@ model SchoolTransaction {
   reason    SchoolTransactionReason
   paymentId String?
   payment   Payment?                @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  adminId   String
-  admin     User                    @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  lessonId  String?
+  lesson    Lesson?                 @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  adminId   String?
+  admin     User?                   @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: SetNull)
   note      String?
   createdAt DateTime                @default(now())
+}
+
+model TeacherCommission {
+  id            String   @id @default(cuid())
+  teacherId     String
+  teacher       User     @relation("TeacherCommissionReceiver", fields: [teacherId], references: [id], onDelete: Cascade)
+  percentage    Decimal
+  effectiveFrom DateTime
+  createdById   String
+  createdBy     User     @relation("TeacherCommissionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime @default(now())
+
+  @@index([teacherId, effectiveFrom])
+}
+
+model TeacherEarning {
+  id              String        @id @default(cuid())
+  teacherId       String
+  teacher         User          @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  lessonId        String
+  lesson          Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  paymentLessonId String        @unique
+  paymentLesson   PaymentLesson @relation(fields: [paymentLessonId], references: [id], onDelete: Cascade)
+  amount          Decimal
+  percentage      Decimal
+  createdAt       DateTime      @default(now())
+
+  @@index([teacherId])
+}
+
+model TeacherPayout {
+  id        String   @id @default(cuid())
+  teacherId String
+  teacher   User     @relation("TeacherPayoutReceiver", fields: [teacherId], references: [id], onDelete: Restrict)
+  amount    Decimal
+  adminId   String
+  admin     User     @relation("TeacherPayoutAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  notes     String?
+  createdAt DateTime @default(now())
+
+  @@index([teacherId])
 }
