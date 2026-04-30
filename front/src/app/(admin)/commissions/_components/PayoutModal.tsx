@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,21 @@ export function PayoutModal({ teacherId, teacherName, open, onClose }: Props) {
   const [notes, setNotes] = useState('');
   const createPayout = useCreatePayout();
 
+  useEffect(() => {
+    if (!open) {
+      setAmount('');
+      setNotes('');
+    }
+  }, [open]);
+
   function handleSave() {
     if (!amount) return;
     createPayout.mutate(
       { teacherId, amount, notes: notes || undefined },
-      { onSuccess: onClose },
+      {
+        onSuccess: onClose,
+        onError: (err) => alert('Помилка збереження: ' + String(err)),
+      },
     );
   }
 

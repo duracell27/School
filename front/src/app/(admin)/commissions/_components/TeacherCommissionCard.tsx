@@ -18,7 +18,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
   const [rateOpen, setRateOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const { data: payouts = [] } = useTeacherPayouts(expanded ? id : '');
+  const { data: payouts = [], isLoading: payoutsLoading } = useTeacherPayouts(expanded ? id : '');
 
   function fmtDate(iso: string) {
     return new Date(iso).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -65,23 +65,27 @@ export function TeacherCommissionCard({ teacher }: Props) {
         )}
       </div>
 
-      <button
-        className="text-xs text-blue-500 hover:underline"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-xs text-blue-500 h-auto p-0"
         onClick={() => setExpanded(e => !e)}
       >
         {expanded ? 'Згорнути' : 'Історія виплат'}
-      </button>
+      </Button>
 
       {expanded && (
         <div className="space-y-1">
-          {payouts.length === 0 ? (
+          {payoutsLoading ? (
+            <p className="text-xs text-gray-400">Завантаження...</p>
+          ) : payouts.length === 0 ? (
             <p className="text-xs text-gray-400">Виплат немає</p>
           ) : (
             payouts.map(p => (
               <div key={p.id} className="flex justify-between text-xs text-gray-600">
                 <span>{fmtDate(p.createdAt)}</span>
                 <span className="font-medium">{formatCurrency(Number(p.amount))}</span>
-                <span className="text-gray-400">{p.notes ?? '—'}</span>
+                <span className="text-gray-400 truncate max-w-[120px]">{p.notes ?? '—'}</span>
               </div>
             ))
           )}

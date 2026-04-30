@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,11 +20,22 @@ export function CommissionRateModal({ teacherId, open, onClose }: Props) {
   );
   const setCommission = useSetCommission();
 
+  useEffect(() => {
+    if (!open) {
+      setPercentage('');
+      setEffectiveFrom(new Date().toISOString().slice(0, 10));
+    }
+  }, [open]);
+
   function handleSave() {
-    if (!percentage || !effectiveFrom) return;
+    const pct = Number(percentage);
+    if (!percentage || pct < 0 || pct > 100) return;
     setCommission.mutate(
       { teacherId, percentage, effectiveFrom },
-      { onSuccess: onClose },
+      {
+        onSuccess: onClose,
+        onError: (err) => alert('Помилка збереження: ' + String(err)),
+      },
     );
   }
 
