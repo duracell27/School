@@ -163,6 +163,8 @@ model SchoolTransaction {
   admin     User?                   @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: SetNull)
   note      String?
   createdAt DateTime                @default(now())
+
+  @@index([lessonId, reason])
 }
 
 model TeacherCommission {
@@ -175,7 +177,7 @@ model TeacherCommission {
   createdBy     User     @relation("TeacherCommissionCreator", fields: [createdById], references: [id], onDelete: Restrict)
   createdAt     DateTime @default(now())
 
-  @@index([teacherId, effectiveFrom])
+  @@unique([teacherId, effectiveFrom])
 }
 
 model TeacherEarning {
