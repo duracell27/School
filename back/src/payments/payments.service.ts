@@ -84,12 +84,21 @@ export class PaymentsService {
       this.prisma.lesson.findMany({
         where: { childId, teacherId, status: { in: ['CONDUCTED', 'PLANNED'] } },
         orderBy: { startDate: 'asc' },
-        select: { id: true, price: true, status: true },
+        select: { id: true, price: true, status: true, startDate: true },
       }),
     ]);
 
     if (payments.length === 0) return;
 
+    // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for conducted lessons in this pair
+    const conductedIds = lessons.filter(l => l.status === 'CONDUCTED').map(l => l.id);
+    if (conductedIds.length > 0) {
+      await this.prisma.schoolTransaction.deleteMany({
+        where: { lessonId: { in: conductedIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
+      });
+    }
+
+    // Delete PaymentLesson (cascades to TeacherEarning)
     await this.prisma.paymentLesson.deleteMany({
       where: { paymentId: { in: payments.map(p => p.id) } },
     });
@@ -99,15 +108,79 @@ export class PaymentsService {
       lessons.map(l => ({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' })),
     );
 
-    if (records.length > 0) {
-      await this.prisma.paymentLesson.createMany({
-        data: records.map(r => ({
-          paymentId: r.paymentId,
-          lessonId: r.lessonId,
-          amount: r.amount,
-          type: r.type as PaymentLessonType,
-        })),
+    if (records.length === 0) return;
+
+    const createdPLs = await this.prisma.paymentLesson.createManyAndReturn({
+      data: records.map(r => ({
+        paymentId: r.paymentId,
+        lessonId: r.lessonId,
+        amount: r.amount,
+        type: r.type as PaymentLessonType,
+      })),
+      select: { id: true, lessonId: true, amount: true, type: true },
+    });
+
+    // Build TeacherEarning + SchoolTransaction(LESSON_SCHOOL_SHARE) for DEBT allocations
+    const debtPLs = createdPLs.filter(pl => pl.type === 'DEBT');
+    if (debtPLs.length === 0) return;
+
+    const lessonDateMap = new Map(lessons.map(l => [l.id, l.startDate]));
+    const commissionCache = new Map<string, number | null>();
+    const earningsData: Array<{
+      teacherId: string;
+      lessonId: string;
+      paymentLessonId: string;
+      amount: Prisma.Decimal;
+      percentage: Prisma.Decimal;
+    }> = [];
+    const schoolTxData: Array<{
+      amount: Prisma.Decimal;
+      reason: SchoolTransactionReason;
+      lessonId: string;
+    }> = [];
+
+    for (const pl of debtPLs) {
+      const startDate = lessonDateMap.get(pl.lessonId);
+      if (!startDate) continue;
+
+      const dateKey = startDate.toISOString();
+      if (!commissionCache.has(dateKey)) {
+        const commission = await this.prisma.teacherCommission.findFirst({
+          where: { teacherId, effectiveFrom: { lte: startDate } },
+          orderBy: { effectiveFrom: 'desc' },
+          select: { percentage: true },
+        });
+        commissionCache.set(dateKey, commission ? Number(commission.percentage) : null);
+      }
+
+      const pct = commissionCache.get(dateKey);
+      if (pct === null || pct === undefined) continue;
+
+      const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
+      const schoolAmt = Math.round(Number(pl.amount) * (100 - pct)) / 100;
+
+      earningsData.push({
+        teacherId,
+        lessonId: pl.lessonId,
+        paymentLessonId: pl.id,
+        amount: new Prisma.Decimal(teacherAmt),
+        percentage: new Prisma.Decimal(pct),
       });
+
+      if (schoolAmt > 0) {
+        schoolTxData.push({
+          amount: new Prisma.Decimal(schoolAmt),
+          reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE,
+          lessonId: pl.lessonId,
+        });
+      }
+    }
+
+    if (earningsData.length > 0) {
+      await this.prisma.teacherEarning.createMany({ data: earningsData });
+    }
+    if (schoolTxData.length > 0) {
+      await this.prisma.schoolTransaction.createMany({ data: schoolTxData });
     }
   }
 
