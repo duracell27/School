@@ -88,100 +88,108 @@ export class PaymentsService {
       }),
     ]);
 
-    if (payments.length === 0) return;
-
-    // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for conducted lessons in this pair
-    const conductedIds = lessons.filter(l => l.status === 'CONDUCTED').map(l => l.id);
-    if (conductedIds.length > 0) {
-      await this.prisma.schoolTransaction.deleteMany({
-        where: { lessonId: { in: conductedIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
-      });
-    }
-
-    // Delete PaymentLesson (cascades to TeacherEarning)
-    await this.prisma.paymentLesson.deleteMany({
-      where: { paymentId: { in: payments.map(p => p.id) } },
-    });
-
-    const records = computeAllocation(
-      payments.map(p => ({ id: p.id, amount: Number(p.amount) })),
-      lessons.map(l => ({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' })),
-    );
-
-    if (records.length === 0) return;
-
-    const createdPLs = await this.prisma.paymentLesson.createManyAndReturn({
-      data: records.map(r => ({
-        paymentId: r.paymentId,
-        lessonId: r.lessonId,
-        amount: r.amount,
-        type: r.type as PaymentLessonType,
-      })),
-      select: { id: true, lessonId: true, amount: true, type: true },
-    });
-
-    // Build TeacherEarning + SchoolTransaction(LESSON_SCHOOL_SHARE) for DEBT allocations
-    const debtPLs = createdPLs.filter(pl => pl.type === 'DEBT');
-    if (debtPLs.length === 0) return;
-
-    const lessonDateMap = new Map(lessons.map(l => [l.id, l.startDate]));
-    const commissionCache = new Map<string, number | null>();
-    const earningsData: Array<{
-      teacherId: string;
-      lessonId: string;
-      paymentLessonId: string;
-      amount: Prisma.Decimal;
-      percentage: Prisma.Decimal;
-    }> = [];
-    const schoolTxData: Array<{
-      amount: Prisma.Decimal;
-      reason: SchoolTransactionReason;
-      lessonId: string;
-    }> = [];
-
-    for (const pl of debtPLs) {
-      const startDate = lessonDateMap.get(pl.lessonId);
-      if (!startDate) continue;
-
-      const dateKey = startDate.toISOString();
-      if (!commissionCache.has(dateKey)) {
-        const commission = await this.prisma.teacherCommission.findFirst({
-          where: { teacherId, effectiveFrom: { lte: startDate } },
-          orderBy: { effectiveFrom: 'desc' },
-          select: { percentage: true },
-        });
-        commissionCache.set(dateKey, commission ? Number(commission.percentage) : null);
-      }
-
-      const pct = commissionCache.get(dateKey);
-      if (pct === null || pct === undefined) continue;
-
-      const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
-      const schoolAmt = Math.round(Number(pl.amount) * (100 - pct)) / 100;
-
-      earningsData.push({
-        teacherId,
-        lessonId: pl.lessonId,
-        paymentLessonId: pl.id,
-        amount: new Prisma.Decimal(teacherAmt),
-        percentage: new Prisma.Decimal(pct),
-      });
-
-      if (schoolAmt > 0) {
-        schoolTxData.push({
-          amount: new Prisma.Decimal(schoolAmt),
-          reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE,
-          lessonId: pl.lessonId,
+    await this.prisma.$transaction(async (tx) => {
+      // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for conducted lessons in this pair
+      const conductedIds = lessons.filter(l => l.status === 'CONDUCTED').map(l => l.id);
+      if (conductedIds.length > 0) {
+        await tx.schoolTransaction.deleteMany({
+          where: { lessonId: { in: conductedIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
         });
       }
-    }
 
-    if (earningsData.length > 0) {
-      await this.prisma.teacherEarning.createMany({ data: earningsData });
-    }
-    if (schoolTxData.length > 0) {
-      await this.prisma.schoolTransaction.createMany({ data: schoolTxData });
-    }
+      // Delete PaymentLesson (cascades to TeacherEarning)
+      await tx.paymentLesson.deleteMany({
+        where: { paymentId: { in: payments.map(p => p.id) } },
+      });
+
+      // Fix 2: early-return after cleanup so deletions still happen when payments is empty
+      if (payments.length === 0) return;
+
+      const records = computeAllocation(
+        payments.map(p => ({ id: p.id, amount: Number(p.amount) })),
+        lessons.map(l => ({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' })),
+      );
+
+      if (records.length === 0) return;
+
+      const createdPLs = await tx.paymentLesson.createManyAndReturn({
+        data: records.map(r => ({
+          paymentId: r.paymentId,
+          lessonId: r.lessonId,
+          amount: r.amount,
+          type: r.type as PaymentLessonType,
+        })),
+        select: { id: true, lessonId: true, amount: true, type: true },
+      });
+
+      // Build TeacherEarning + SchoolTransaction(LESSON_SCHOOL_SHARE) for DEBT allocations
+      const debtPLs = createdPLs.filter(pl => pl.type === 'DEBT');
+      if (debtPLs.length === 0) return;
+
+      const lessonDateMap = new Map(lessons.map(l => [l.id, l.startDate]));
+      const commissionCache = new Map<string, number | null>();
+      const earningsData: Array<{
+        teacherId: string;
+        lessonId: string;
+        paymentLessonId: string;
+        amount: Prisma.Decimal;
+        percentage: Prisma.Decimal;
+      }> = [];
+      const schoolTxData: Array<{
+        amount: Prisma.Decimal;
+        reason: SchoolTransactionReason;
+        lessonId: string;
+      }> = [];
+
+      for (const pl of debtPLs) {
+        const startDate = lessonDateMap.get(pl.lessonId);
+        if (!startDate) continue;
+
+        // Fix 5: use date-only key to match effectiveFrom date-precision semantics
+        const dateKey = startDate.toISOString().slice(0, 10);
+        if (!commissionCache.has(dateKey)) {
+          const commission = await tx.teacherCommission.findFirst({
+            where: { teacherId, effectiveFrom: { lte: startDate } },
+            orderBy: { effectiveFrom: 'desc' },
+            select: { percentage: true },
+          });
+          commissionCache.set(dateKey, commission ? Number(commission.percentage) : null);
+        }
+
+        const pct = commissionCache.get(dateKey);
+        if (pct === null || pct === undefined) continue;
+
+        // Fix 3: derive schoolAmt from teacherAmt to avoid dual-rounding discrepancy
+        const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
+        const schoolAmt = Math.round((Number(pl.amount) - teacherAmt) * 100) / 100;
+
+        // Fix 4: guard zero-amount entries
+        if (teacherAmt > 0) {
+          earningsData.push({
+            teacherId,
+            lessonId: pl.lessonId,
+            paymentLessonId: pl.id,
+            amount: new Prisma.Decimal(teacherAmt),
+            percentage: new Prisma.Decimal(pct),
+          });
+        }
+
+        if (schoolAmt > 0) {
+          schoolTxData.push({
+            amount: new Prisma.Decimal(schoolAmt),
+            reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE,
+            lessonId: pl.lessonId,
+          });
+        }
+      }
+
+      if (earningsData.length > 0) {
+        await tx.teacherEarning.createMany({ data: earningsData });
+      }
+      if (schoolTxData.length > 0) {
+        await tx.schoolTransaction.createMany({ data: schoolTxData });
+      }
+    });
   }
 
   async create(dto: CreatePaymentDto, adminId: string) {
