@@ -21,6 +21,7 @@ export interface TeacherBalance {
   balance: number;
   potentialBalance: number;
   currentCommission: number | null;
+  totalRevenue: number;
 }
 
 export interface TeacherWithBalance {

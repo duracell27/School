@@ -58,7 +58,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-6 text-sm">
+      <div className="flex gap-6 text-sm flex-wrap">
         <div>
           <p className="text-xs text-gray-400">Офіційно нараховано</p>
           <p className={`font-semibold ${balance.balance <= 0 ? 'text-green-600' : 'text-red-500'}`}>
@@ -73,6 +73,13 @@ export function TeacherCommissionCard({ teacher }: Props) {
               {formatCurrency(balance.potentialBalance)}
             </p>
             <p className="text-xs text-gray-400">+{formatCurrency(balance.potentialEarnings)} непідтверджені</p>
+          </div>
+        )}
+        {balance.totalRevenue > 0 && (
+          <div>
+            <p className="text-xs text-gray-400">Приніс школі</p>
+            <p className="font-semibold text-blue-600">{formatCurrency(balance.totalRevenue)}</p>
+            <p className="text-xs text-gray-400">всього проведено</p>
           </div>
         )}
       </div>

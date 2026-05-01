@@ -19,7 +19,7 @@ export default function CommissionsPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Комісії вчителів</h2>
-      <div className="grid grid-cols-1 gap-3 max-w-2xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {teachers.map(t => (
           <TeacherCommissionCard key={t.id} teacher={t} />
         ))}

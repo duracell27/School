@@ -138,6 +138,8 @@ export class CommissionsService {
       }
     }
 
+    const totalRevenue = conductedLessons.reduce((sum, l) => sum + Number(l.price), 0);
+
     const round = (n: number) => Math.round(n * 100) / 100;
     return {
       officialEarnings: round(officialEarnings),
@@ -146,6 +148,7 @@ export class CommissionsService {
       balance: round(officialEarnings - totalPayout),
       potentialBalance: round(officialEarnings + potentialEarnings - totalPayout),
       currentCommission: commissionPct,
+      totalRevenue: round(totalRevenue),
     };
   }
 
