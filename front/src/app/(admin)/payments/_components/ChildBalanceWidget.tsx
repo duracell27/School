@@ -2,6 +2,7 @@
 
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { getCountry } from '@/lib/countries';
 import { useChildBalances } from '@/lib/lessons';
 
 export function ChildBalanceWidget() {
@@ -35,6 +36,7 @@ export function ChildBalanceWidget() {
             <div className="flex items-center gap-2">
               <ChildAvatar name={child.name} avatar={child.avatar} size={28} />
               <span className="text-sm font-medium leading-tight">{child.name}</span>
+              <span className="text-base">{getCountry(child.country)?.flag ?? child.country}</span>
             </div>
             <div className="flex items-center gap-2">
               <UserAvatar name={teacher.name} avatar={teacher.avatar} size={22} />

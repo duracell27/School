@@ -123,7 +123,7 @@ export class LessonsService {
       select: {
         childId: true,
         teacherId: true,
-        child: { select: { id: true, name: true, avatar: true } },
+        child: { select: { id: true, name: true, avatar: true, country: true } },
         teacher: { select: { id: true, name: true, avatar: true } },
       },
     });
