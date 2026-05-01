@@ -149,6 +149,7 @@ export class CommissionsService {
       potentialBalance: round(officialEarnings + potentialEarnings - totalPayout),
       currentCommission: commissionPct,
       totalRevenue: round(totalRevenue),
+      conductedLessonsCount: conductedLessons.length,
     };
   }
 
