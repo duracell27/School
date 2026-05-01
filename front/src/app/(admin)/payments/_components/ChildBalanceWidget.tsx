@@ -20,9 +20,20 @@ export function ChildBalanceWidget() {
 
   if (balances.length === 0) return null;
 
+  const sorted = [...balances].sort((a, b) => {
+    const score = (x: typeof a) => {
+      if (x.debtCount > 0 || x.debtUah > 0)
+        return -(x.debtUah + x.debtCount * 100);            // negative → debts first, largest most negative
+      if (x.prepaidCount > 0 || x.leftoverUah > 0)
+        return 1e6 - (x.leftoverUah + x.prepaidCount * 100); // ~1M minus value → largest prepaid first
+      return 2e6;                                            // settled last
+    };
+    return score(a) - score(b);
+  });
+
   return (
     <div className="flex gap-3 flex-wrap">
-      {balances.map(({ child, teacher, debtCount, debtUah, prepaidCount, leftoverUah }) => {
+      {sorted.map(({ child, teacher, debtCount, debtUah, prepaidCount, leftoverUah }) => {
         const isDebt = debtCount > 0 || debtUah > 0;
         const isPrepaid = prepaidCount > 0;
         const hasLeftover = leftoverUah > 0;
