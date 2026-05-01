@@ -68,11 +68,11 @@ export function TeacherCommissionCard({ teacher }: Props) {
         </div>
         {balance.potentialEarnings > 0 && (
           <div>
-            <p className="text-xs text-gray-400">Потенційно</p>
-            <p className="font-semibold text-gray-400">
-              {formatCurrency(balance.potentialBalance)}
+            <p className="text-xs text-gray-400">Ще не нараховано</p>
+            <p className="font-semibold text-amber-500">
+              +{formatCurrency(balance.potentialEarnings)}
             </p>
-            <p className="text-xs text-gray-400">+{formatCurrency(balance.potentialEarnings)} непідтверджені</p>
+            <p className="text-xs text-gray-400">уроки без офіційного нарахування</p>
           </div>
         )}
         {balance.totalRevenue > 0 && (
