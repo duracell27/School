@@ -5,6 +5,7 @@ import { PeriodSwitcher } from './_components/PeriodSwitcher';
 import { NextLessonCard } from './_components/NextLessonCard';
 import { SummaryCard } from './_components/SummaryCard';
 import { ActiveChildrenCard } from './_components/ActiveChildrenCard';
+import { TopDebtorCard } from './_components/TopDebtorCard';
 import { LessonChart } from './_components/LessonChart';
 import { ChildrenByCountry } from './_components/ChildrenByCountry';
 import { TeachersTable } from './_components/TeachersTable';
@@ -66,6 +67,11 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
         amount={data?.expected}
         isLoading={isLoading}
       />
+      <SummaryCard
+        title="Проведено уроків"
+        count={data?.conductedCount}
+        isLoading={isLoading}
+      />
     </>
   );
 }
@@ -102,11 +108,12 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Top row: 4 metric cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Top row: metric cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <NextLessonCard />
         <SummaryCards period={period} date={dateParam} />
         <ActiveChildrenCard />
+        <TopDebtorCard />
       </div>
 
       {/* Bottom row: chart (2/3) + country breakdown (1/3) */}

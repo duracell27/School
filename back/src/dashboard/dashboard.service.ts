@@ -131,6 +131,7 @@ export class DashboardService {
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
+        _count: { id: true },
       }),
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'PLANNED', startDate: { gte: now, lt: end } },
@@ -149,7 +150,7 @@ export class DashboardService {
       ? null
       : Math.round(((earned - prevEarned) / prevEarned) * 100);
 
-    return { earned, expected, earnedDelta };
+    return { earned, expected, earnedDelta, conductedCount: conducted._count.id };
   }
 
   async getChart(userId: string, userRole: Role, period: Period, ref: Date = new Date()): Promise<ChartPoint[]> {

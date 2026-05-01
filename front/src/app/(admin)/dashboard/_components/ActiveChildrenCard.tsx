@@ -9,7 +9,7 @@ export function ActiveChildrenCard() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Активні учні</CardTitle>
+        <CardTitle className="text-sm font-medium text-gray-500">Учні</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
