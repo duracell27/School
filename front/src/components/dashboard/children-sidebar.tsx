@@ -83,7 +83,7 @@ interface ChildrenSidebarProps {
 }
 
 export function ChildrenSidebar({ childList, lessons, duration, onDurationChange }: ChildrenSidebarProps) {
-  const [showOnlyOverdue, setShowOnlyOverdue] = useState(false);
+  const [search, setSearch] = useState('');
 
   const childWeekStatuses = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -95,20 +95,11 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
     return map;
   }, [lessons]);
 
-  const childIdsWithOverdue = useMemo(() => {
-    const ids = new Set<string>();
-    const now = new Date();
-    lessons.forEach((l) => {
-      if (l.status === 'PLANNED' && new Date(l.endDate) < now) {
-        ids.add(l.child.id);
-      }
-    });
-    return ids;
-  }, [lessons]);
-
-  const visibleChildren = showOnlyOverdue
-    ? childList.filter((c) => childIdsWithOverdue.has(c.id))
-    : childList;
+  const visibleChildren = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return childList;
+    return childList.filter((c) => c.name.toLowerCase().includes(q));
+  }, [childList, search]);
 
   return (
     <div className="w-48 shrink-0 flex flex-col gap-2 border rounded-lg bg-white p-2">
@@ -132,17 +123,14 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
         </button>
       </div>
 
-      {/* Overdue filter toggle */}
-      <button
-        className={`text-xs px-2 py-1 rounded border transition-colors text-left ${
-          showOnlyOverdue
-            ? 'bg-red-50 border-red-300 text-red-700'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-        }`}
-        onClick={() => setShowOnlyOverdue((v) => !v)}
-      >
-        {showOnlyOverdue ? '✕ Скинути фільтр' : 'Лише з необробленими'}
-      </button>
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Пошук..."
+        className="w-full text-xs px-2 py-1 rounded border border-gray-200 outline-none focus:border-blue-400 bg-white"
+      />
 
       {/* Children list */}
       <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">

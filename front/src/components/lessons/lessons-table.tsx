@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { getCountry } from '@/lib/countries';
 import { useUpdateLesson } from '@/lib/lessons';
 import { useSessionStore } from '@/store/session.store';
 import type { Lesson, LessonStatus, PaymentStatus } from '@/types/lesson';
@@ -153,6 +154,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
               <div className="flex items-center gap-2">
                 <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
                 <span className="font-medium">{lesson.child.name}</span>
+                <span className="text-base">{getCountry(lesson.child.country)?.flag ?? lesson.child.country}</span>
               </div>
             </TableCell>
             <TableCell>

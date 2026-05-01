@@ -9,7 +9,7 @@ export interface PaymentLessonSummary {
 
 export interface Payment {
   id: string;
-  child: { id: string; name: string; avatar: string | null };
+  child: { id: string; name: string; avatar: string | null; country: string };
   teacher: { id: string; name: string; avatar: string | null };
   amount: string;
   date: string;

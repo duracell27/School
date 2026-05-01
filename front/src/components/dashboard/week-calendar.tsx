@@ -231,12 +231,19 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
         <div className="h-10 border-b" />
         <div className="relative" style={{ height: TOTAL_H }}>
           {HOURS.map((h) => (
-            <div
-              key={h}
-              className="absolute w-full pr-1.5 text-right text-[10px] text-gray-400"
-              style={{ top: (h - HOUR_START) * ROW_PX - 6 }}
-            >
-              {String(h).padStart(2, '0')}:00
+            <div key={h}>
+              <div
+                className="absolute w-full pr-1.5 text-right text-[10px] text-gray-400 leading-none"
+                style={{ top: (h - HOUR_START) * ROW_PX - 5 }}
+              >
+                {String(h).padStart(2, '0')}:00
+              </div>
+              <div
+                className="absolute w-full pr-1.5 text-right text-[9px] text-gray-300 leading-none"
+                style={{ top: (h - HOUR_START) * ROW_PX + ROW_PX / 2 - 4 }}
+              >
+                :30
+              </div>
             </div>
           ))}
         </div>
@@ -288,13 +295,18 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
                 );
               })}
 
-              {/* Hour grid lines */}
+              {/* Hour and half-hour grid lines */}
               {HOURS.map((h) => (
-                <div
-                  key={h}
-                  className="absolute w-full border-t border-gray-100 pointer-events-none"
-                  style={{ top: (h - HOUR_START) * ROW_PX }}
-                />
+                <div key={h}>
+                  <div
+                    className="absolute w-full border-t border-gray-100 pointer-events-none"
+                    style={{ top: (h - HOUR_START) * ROW_PX }}
+                  />
+                  <div
+                    className="absolute w-full border-t border-gray-50 pointer-events-none"
+                    style={{ top: (h - HOUR_START) * ROW_PX + ROW_PX / 2 }}
+                  />
+                </div>
               ))}
 
               {/* Lesson cards */}

@@ -12,6 +12,7 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { getCountry } from '@/lib/countries';
 import { useDeletePayment } from '@/lib/payments';
 import { formatCurrency } from '@/lib/format';
 import type { Payment } from '@/types/payment';
@@ -87,6 +88,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
                 <div className="flex items-center gap-2">
                   <ChildAvatar name={payment.child.name} avatar={payment.child.avatar} size={24} />
                   <span className="font-medium text-sm">{payment.child.name}</span>
+                  <span className="text-base">{getCountry(payment.child.country)?.flag ?? payment.child.country}</span>
                 </div>
               </TableCell>
               <TableCell>

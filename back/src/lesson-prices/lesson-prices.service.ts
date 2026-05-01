@@ -6,7 +6,7 @@ import { UpdateLessonPriceDto } from './dto/update-lesson-price.dto';
 
 const lessonPriceSelect = {
   id: true,
-  child: { select: { id: true, name: true, avatar: true } },
+  child: { select: { id: true, name: true, avatar: true, country: true } },
   teacher: { select: { id: true, name: true, avatar: true } },
   price: true,
   subject: true,

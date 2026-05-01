@@ -48,7 +48,7 @@ export function computeAllocation(
 
 const paymentSelect = {
   id: true,
-  child: { select: { id: true, name: true, avatar: true } },
+  child: { select: { id: true, name: true, avatar: true, country: true } },
   teacher: { select: { id: true, name: true, avatar: true } },
   amount: true,
   date: true,

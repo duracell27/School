@@ -6,6 +6,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
+import { getCountry } from '@/lib/countries';
+import { subjectEmoji, subjectLabel } from '@/lib/subjects';
 import type { LessonPrice } from '@/types/lesson';
 
 interface LessonPricesTableProps {
@@ -21,6 +23,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
         <TableRow>
           <TableHead>Учень</TableHead>
           <TableHead>Вчитель</TableHead>
+          <TableHead>Предмет</TableHead>
           <TableHead>Ціна (грн)</TableHead>
           <TableHead>Діє з</TableHead>
           <TableHead className="text-right">Дії</TableHead>
@@ -33,6 +36,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
               <div className="flex items-center gap-2">
                 <ChildAvatar name={p.child.name} avatar={p.child.avatar} size={28} />
                 <span className="font-medium">{p.child.name}</span>
+                <span className="text-base">{getCountry(p.child.country)?.flag ?? p.child.country}</span>
               </div>
             </TableCell>
             <TableCell>
@@ -40,6 +44,11 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
                 <UserAvatar name={p.teacher.name} avatar={p.teacher.avatar} size={28} />
                 <span>{p.teacher.name}</span>
               </div>
+            </TableCell>
+            <TableCell>
+              {p.subject
+                ? <span className="text-sm">{subjectEmoji(p.subject)} {subjectLabel(p.subject)}</span>
+                : <span className="text-gray-400 text-sm">—</span>}
             </TableCell>
             <TableCell>{Number(p.price).toLocaleString('uk-UA')}</TableCell>
             <TableCell>{new Date(p.effectiveDate).toLocaleDateString('uk-UA')}</TableCell>
@@ -51,7 +60,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
         ))}
         {prices.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-gray-400 py-8">Записів не знайдено</TableCell>
+            <TableCell colSpan={6} className="text-center text-gray-400 py-8">Записів не знайдено</TableCell>
           </TableRow>
         )}
       </TableBody>
