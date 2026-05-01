@@ -78,7 +78,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
         {balance.totalRevenue > 0 && (
           <div>
             <p className="text-xs text-gray-400">Приніс школі</p>
-            <p className="font-semibold text-blue-600">{formatCurrency(balance.totalRevenue - balance.officialEarnings)}</p>
+            <p className="font-semibold text-blue-600">{formatCurrency(balance.schoolRevenue)}</p>
             <p className="text-xs text-gray-400">{balance.conductedLessonsCount} проведених занять</p>
           </div>
         )}
