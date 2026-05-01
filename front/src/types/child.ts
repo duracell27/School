@@ -3,6 +3,12 @@ export interface ParentContact {
   phone: string;
 }
 
+export interface ChildSubject {
+  id: string;
+  subject: 'MATH' | 'UKRAINIAN';
+  teacher: { id: string; name: string };
+}
+
 export interface Child {
   id: string;
   name: string;
@@ -13,8 +19,7 @@ export interface Child {
   graduationDate: string | null;
   parentContacts: ParentContact[];
   timezone: string;
-  teacherId: string | null;
-  teacher: { id: string; name: string } | null;
+  subjects: ChildSubject[];
   createdAt: string;
   updatedAt: string;
 }
@@ -28,7 +33,6 @@ export interface CreateChildPayload {
   graduationDate?: string;
   parentContacts?: ParentContact[];
   timezone: string;
-  teacherId?: string;
 }
 
 export interface UpdateChildPayload {
@@ -40,5 +44,4 @@ export interface UpdateChildPayload {
   graduationDate?: string;
   parentContacts?: ParentContact[];
   timezone?: string;
-  teacherId?: string;
 }

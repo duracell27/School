@@ -45,16 +45,19 @@ export function usePaymentPreview(params: {
   });
 }
 
+function invalidatePaymentRelated(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: ['payments'] });
+  queryClient.invalidateQueries({ queryKey: ['payments', 'school-balance'] });
+  queryClient.invalidateQueries({ queryKey: ['lessons'] });
+  queryClient.invalidateQueries({ queryKey: ['child-balances'] });
+}
+
 export function useCreatePayment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: CreatePaymentPayload) =>
       apiFetch<Payment>('/payments', { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['lessons'] });
-      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
-    },
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   });
 }
 
@@ -63,11 +66,7 @@ export function useUpdatePayment() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdatePaymentPayload }) =>
       apiFetch<Payment>(`/payments/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['lessons'] });
-      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
-    },
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   });
 }
 
@@ -75,11 +74,7 @@ export function useDeletePayment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/payments/${id}`, { method: 'DELETE' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
-      queryClient.invalidateQueries({ queryKey: ['lessons'] });
-      queryClient.invalidateQueries({ queryKey: ['child-balances'] });
-    },
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   });
 }
 
@@ -88,7 +83,7 @@ export function useWriteoff() {
   return useMutation({
     mutationFn: (paymentId: string) =>
       apiFetch(`/payments/${paymentId}/writeoff`, { method: 'POST' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payments'] }),
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   });
 }
 
@@ -97,6 +92,6 @@ export function useTopup() {
   return useMutation({
     mutationFn: (paymentId: string) =>
       apiFetch(`/payments/${paymentId}/topup`, { method: 'POST' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payments'] }),
+    onSuccess: () => invalidatePaymentRelated(queryClient),
   });
 }

@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsNumber, IsPositive, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsPositive, IsDateString, IsEnum, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
+import { Subject } from '@prisma/client';
 
 export class CreateLessonPriceDto {
   @IsString()
@@ -17,4 +18,8 @@ export class CreateLessonPriceDto {
 
   @IsDateString()
   effectiveDate: string;
+
+  @IsEnum(Subject)
+  @IsOptional()
+  subject?: Subject;
 }

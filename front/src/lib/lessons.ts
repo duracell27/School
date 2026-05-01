@@ -61,13 +61,18 @@ export function usePriceSuggestion(
   childId: string | null,
   teacherId: string | null,
   startDate: string | null,
+  subject?: string | null,
 ) {
   return useQuery({
-    queryKey: ['price-suggestion', childId, teacherId, startDate],
+    queryKey: ['price-suggestion', childId, teacherId, startDate, subject],
     queryFn: async () => {
-      const result = await apiFetch<number | null>(
-        `/lessons/price-suggestion?childId=${childId}&teacherId=${teacherId}&startDate=${encodeURIComponent(startDate!)}`,
-      );
+      const params = new URLSearchParams({
+        childId: childId!,
+        teacherId: teacherId!,
+        startDate: startDate!,
+      });
+      if (subject) params.set('subject', subject);
+      const result = await apiFetch<number | null>(`/lessons/price-suggestion?${params}`);
       return result ?? null;
     },
     enabled: !!(childId && teacherId && startDate),

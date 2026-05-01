@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, UseGuards, HttpCode } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import type { Request } from 'express';
 import { CommissionsService } from './commissions.service';
 import { CreateCommissionDto } from './dto/create-commission.dto';
 import { CreatePayoutDto } from './dto/create-payout.dto';
+import { UpdatePayoutDto } from './dto/update-payout.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -46,5 +47,16 @@ export class CommissionsController {
   createPayout(@Body() dto: CreatePayoutDto, @Req() req: Request) {
     const user = req['user'] as JwtUser;
     return this.service.createPayout(dto, user.sub);
+  }
+
+  @Patch('payouts/:id')
+  updatePayout(@Param('id') id: string, @Body() dto: UpdatePayoutDto) {
+    return this.service.updatePayout(id, dto);
+  }
+
+  @Delete('payouts/:id')
+  @HttpCode(204)
+  deletePayout(@Param('id') id: string) {
+    return this.service.deletePayout(id);
   }
 }

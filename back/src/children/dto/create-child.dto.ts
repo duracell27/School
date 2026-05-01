@@ -55,8 +55,4 @@ export class CreateChildDto {
   @IsString()
   @IsNotEmpty()
   timezone: string;
-
-  @IsString()
-  @IsOptional()
-  teacherId?: string;
 }

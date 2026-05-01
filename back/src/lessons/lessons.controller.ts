@@ -47,8 +47,9 @@ export class LessonsController {
     @Query('childId') childId: string,
     @Query('teacherId') teacherId: string,
     @Query('startDate') startDate: string,
+    @Query('subject') subject?: string,
   ) {
-    return this.lessons.getPriceSuggestion(childId, teacherId, startDate);
+    return this.lessons.getPriceSuggestion(childId, teacherId, startDate, subject);
   }
 
   @Post()

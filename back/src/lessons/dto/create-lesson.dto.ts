@@ -3,7 +3,7 @@ import {
   IsDateString, IsEnum, IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LessonStatus } from '@prisma/client';
+import { LessonStatus, Subject } from '@prisma/client';
 
 export class CreateLessonDto {
   @IsString()
@@ -28,6 +28,10 @@ export class CreateLessonDto {
   @IsPositive()
   @Type(() => Number)
   price: number;
+
+  @IsEnum(Subject)
+  @IsOptional()
+  subject?: Subject;
 
   @IsDateString()
   @IsOptional()

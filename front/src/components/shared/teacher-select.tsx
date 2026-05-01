@@ -10,9 +10,10 @@ interface TeacherSelectProps {
   value: string;
   onChange: (id: string) => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export function TeacherSelect({ users, value, onChange, placeholder = 'Оберіть вчителя' }: TeacherSelectProps) {
+export function TeacherSelect({ users, value, onChange, placeholder = 'Оберіть вчителя', disabled }: TeacherSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
@@ -42,8 +43,9 @@ export function TeacherSelect({ users, value, onChange, placeholder = 'Обер�
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 w-full h-9 px-2.5 rounded-lg border border-input bg-transparent text-sm text-left hover:bg-muted transition-colors"
+        onClick={() => !disabled && setOpen((v) => !v)}
+        disabled={disabled}
+        className={`flex items-center gap-2 w-full h-9 px-2.5 rounded-lg border border-input bg-transparent text-sm text-left transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted'}`}
       >
         {selected ? (
           <>

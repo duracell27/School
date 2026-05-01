@@ -46,8 +46,4 @@ export class UpdateChildDto {
   @IsString()
   @IsOptional()
   timezone?: string;
-
-  @IsString()
-  @IsOptional()
-  teacherId?: string;
 }

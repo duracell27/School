@@ -2,13 +2,14 @@
 
 import { useMemo } from 'react';
 import { ChildAvatar } from '@/components/children/child-avatar';
+import { subjectEmoji } from '@/lib/subjects';
 import type { Lesson, LessonStatus } from '@/types/lesson';
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
 const HOUR_START = 6;
 const HOUR_END = 22;
-const ROW_PX = 36;
+const ROW_PX = 44;
 const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 const TOTAL_H = (HOUR_END - HOUR_START) * ROW_PX;
 
@@ -170,6 +171,7 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
       {/* Hover tooltip */}
       <div className="absolute bottom-full left-0 z-50 hidden group-hover:block bg-white border border-gray-200 rounded shadow-lg p-2 text-xs w-44 pointer-events-none">
         <p className="font-semibold">{lesson.child.name}</p>
+        {lesson.subject && <p className="text-gray-500">{subjectEmoji(lesson.subject)} {lesson.subject === 'MATH' ? 'Математика' : 'Українська'}</p>}
         <p className="text-gray-500">{startStr}–{endStr}</p>
         <p className="text-gray-500">{lesson.price}₴</p>
         <p className="text-gray-500">{STATUS_LABEL[lesson.status]}</p>
@@ -189,6 +191,12 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
               · {countryFlag(lesson.child.country)} {childTime}
             </span>
           )}
+        </div>
+      )}
+
+      {lesson.subject && (
+        <div className="text-[9px] leading-none truncate opacity-80">
+          {subjectEmoji(lesson.subject)} {lesson.subject === 'MATH' ? 'Математика' : 'Українська'}
         </div>
       )}
     </div>

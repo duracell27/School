@@ -49,8 +49,8 @@ export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
             </TableCell>
             <TableCell>{user.email}</TableCell>
             <TableCell>
-              <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                {user.role === 'ADMIN' ? 'Адмін' : 'Вчитель'}
+              <Badge variant={user.role === 'TEACHER' ? 'secondary' : 'default'}>
+                {user.role === 'ADMIN' ? 'Адмін' : user.role === 'ADMIN_TEACHER' ? 'Адмін-вчитель' : 'Вчитель'}
               </Badge>
             </TableCell>
             <TableCell>

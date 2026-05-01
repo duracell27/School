@@ -10,15 +10,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown, BookOpen } from 'lucide-react';
 import { ChildAvatar } from './child-avatar';
 import { getCountry } from '@/lib/countries';
+import { subjectEmoji, subjectLabel } from '@/lib/subjects';
 import type { Child } from '@/types/child';
 
 interface ChildrenTableProps {
   children: Child[];
   onEdit: (child: Child) => void;
   onDelete: (child: Child) => void;
+  onManageSubjects: (child: Child) => void;
 }
 
 type SortKey = 'name' | 'age' | 'country' | 'teacher' | 'hireDate';
@@ -84,8 +86,8 @@ function sortChildren(list: Child[], key: SortKey, dir: SortDir): Child[] {
         break;
       }
       case 'teacher': {
-        const ta = a.teacher?.name ?? '';
-        const tb = b.teacher?.name ?? '';
+        const ta = a.subjects[0]?.teacher.name ?? '';
+        const tb = b.subjects[0]?.teacher.name ?? '';
         cmp = ta.localeCompare(tb, 'uk');
         break;
       }
@@ -122,7 +124,7 @@ function SortButton({
   );
 }
 
-export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps) {
+export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: ChildrenTableProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
@@ -153,7 +155,7 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
           </TableHead>
           <TableHead>Таймзона</TableHead>
           <TableHead>
-            <SortButton label="Вчитель" colKey="teacher" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+            <SortButton label="Вчителі" colKey="teacher" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
           </TableHead>
           <TableHead>Батьки</TableHead>
           <TableHead>
@@ -192,13 +194,18 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
                 </div>
               </TableCell>
               <TableCell>
-                {child.teacher ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
-                    {child.teacher.name}
-                  </span>
-                ) : (
-                  <span className="text-gray-400">—</span>
-                )}
+                <div className="flex flex-col gap-1">
+                  {child.subjects.length === 0 ? (
+                    <span className="text-gray-400 text-sm">—</span>
+                  ) : (
+                    child.subjects.map((s) => (
+                      <span key={s.id} className="inline-flex items-center gap-1 text-xs text-gray-600">
+                        {subjectEmoji(s.subject)} {subjectLabel(s.subject)}
+                        <span className="text-gray-400">• {s.teacher.name}</span>
+                      </span>
+                    ))
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col gap-0.5 text-xs text-gray-600">
@@ -234,6 +241,9 @@ export function ChildrenTable({ children, onEdit, onDelete }: ChildrenTableProps
                 </div>
               </TableCell>
               <TableCell className="text-right space-x-2">
+                <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
+                  <BookOpen size={14} />
+                </Button>
                 <Button variant="outline" size="sm" onClick={() => onEdit(child)}>
                   Редагувати
                 </Button>

@@ -4,15 +4,31 @@ import { useState, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { ChildAvatar } from '@/components/children/child-avatar';
+import { getCountry } from '@/lib/countries';
+import { subjectEmoji } from '@/lib/subjects';
 import type { Child } from '@/types/child';
 import type { Lesson } from '@/types/lesson';
 
+const STATUS_DOT: Record<string, string> = {
+  CONDUCTED: 'bg-green-500',
+  PLANNED: 'bg-blue-500',
+  RESCHEDULED: 'bg-amber-400',
+  CANCELLED: 'bg-gray-300',
+};
+
+const STATUS_TITLE: Record<string, string> = {
+  CONDUCTED: 'Проведено',
+  PLANNED: 'Заплановано',
+  RESCHEDULED: 'Перенесено',
+  CANCELLED: 'Скасовано',
+};
+
 interface DraggableChildProps {
   child: Child;
-  hasLessonToday: boolean;
+  weekStatuses: string[];
 }
 
-function DraggableChild({ child, hasLessonToday }: DraggableChildProps) {
+function DraggableChild({ child, weekStatuses }: DraggableChildProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `child-${child.id}`,
     data: { type: 'child', child },
@@ -21,6 +37,8 @@ function DraggableChild({ child, hasLessonToday }: DraggableChildProps) {
   const style = transform
     ? { transform: CSS.Translate.toString(transform) }
     : undefined;
+
+  const flag = getCountry(child.country)?.flag ?? child.country;
 
   return (
     <div
@@ -33,10 +51,26 @@ function DraggableChild({ child, hasLessonToday }: DraggableChildProps) {
       {...attributes}
     >
       <ChildAvatar name={child.name} avatar={child.avatar} size={24} />
-      <span className="text-sm truncate flex-1">{child.name}</span>
-      {hasLessonToday && (
-        <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" title="Має урок сьогодні" />
-      )}
+      <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-sm leading-tight shrink-0">{flag}</span>
+          <span className="text-sm truncate leading-tight">{child.name}</span>
+        </div>
+        {(child.subjects.length > 0 || weekStatuses.length > 0) && (
+          <div className="flex items-center gap-1 mt-0.5">
+            {[...new Set(child.subjects.map((s) => s.subject))].map((s) => (
+              <span key={s} className="text-xs leading-none">{subjectEmoji(s)}</span>
+            ))}
+            {weekStatuses.map((status, i) => (
+              <span
+                key={i}
+                className={`w-2 h-2 rounded-full ${STATUS_DOT[status] ?? 'bg-gray-300'}`}
+                title={STATUS_TITLE[status] ?? status}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -49,17 +83,17 @@ interface ChildrenSidebarProps {
 }
 
 export function ChildrenSidebar({ childList, lessons, duration, onDurationChange }: ChildrenSidebarProps) {
-  const todayKey = new Date().toLocaleDateString('en-CA');
   const [showOnlyOverdue, setShowOnlyOverdue] = useState(false);
 
-  const childIdsWithLessonToday = useMemo(() => {
-    const ids = new Set<string>();
+  const childWeekStatuses = useMemo(() => {
+    const map = new Map<string, string[]>();
     lessons.forEach((l) => {
-      const lKey = new Date(l.startDate).toLocaleDateString('en-CA');
-      if (lKey === todayKey) ids.add(l.child.id);
+      const arr = map.get(l.child.id) ?? [];
+      arr.push(l.status);
+      map.set(l.child.id, arr);
     });
-    return ids;
-  }, [lessons, todayKey]);
+    return map;
+  }, [lessons]);
 
   const childIdsWithOverdue = useMemo(() => {
     const ids = new Set<string>();
@@ -119,7 +153,7 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
             <DraggableChild
               key={child.id}
               child={child}
-              hasLessonToday={childIdsWithLessonToday.has(child.id)}
+              weekStatuses={childWeekStatuses.get(child.id) ?? []}
             />
           ))
         )}

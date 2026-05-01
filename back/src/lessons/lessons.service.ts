@@ -13,6 +13,7 @@ const lessonSelectBase = {
   child: { select: { id: true, name: true, avatar: true, timezone: true, country: true } },
   teacher: { select: { id: true, name: true, avatar: true } },
   status: true,
+  subject: true,
   startDate: true,
   endDate: true,
   price: true,
@@ -26,6 +27,8 @@ const lessonSelectWithPayments = {
   ...lessonSelectBase,
   paymentLessons: { select: { amount: true, type: true } },
 } satisfies Prisma.LessonSelect;
+
+const isAdminRole = (role: Role) => role === Role.ADMIN || role === Role.ADMIN_TEACHER;
 
 function computePaymentStatus(lesson: {
   status: string;
@@ -66,7 +69,7 @@ export class LessonsService {
       where.startDate = { gte: start, lt: end };
     }
 
-    if (userRole === Role.ADMIN) {
+    if (isAdminRole(userRole)) {
       return this.prisma.lesson.findMany({
         where,
         select: lessonSelectWithPayments,
@@ -100,11 +103,13 @@ export class LessonsService {
     childId: string,
     teacherId: string,
     startDate: string,
+    subject?: string,
   ): Promise<number | null> {
     const lp = await this.prisma.lessonPrice.findFirst({
       where: {
         childId,
         teacherId,
+        ...(subject ? { subject: subject as import('@prisma/client').Subject } : {}),
         effectiveDate: { lte: new Date(startDate) },
       },
       orderBy: { effectiveDate: 'desc' },
@@ -113,16 +118,31 @@ export class LessonsService {
   }
 
   async getChildBalances() {
-    const children = await this.prisma.child.findMany({
-      where: { teacherId: { not: null } },
+    // Derive (child, teacher) pairs from subject assignments
+    const childSubjects = await this.prisma.childSubject.findMany({
       select: {
-        id: true, name: true, avatar: true, teacherId: true,
+        childId: true,
+        teacherId: true,
+        child: { select: { id: true, name: true, avatar: true } },
         teacher: { select: { id: true, name: true, avatar: true } },
       },
     });
 
-    const childIds = children.map(c => c.id);
     const pairKey = (cId: string, tId: string) => `${cId}:${tId}`;
+    const pairInfoMap = new Map<string, {
+      childId: string; teacherId: string;
+      child: { id: string; name: string; avatar: string | null };
+      teacher: { id: string; name: string; avatar: string | null };
+    }>();
+    for (const cs of childSubjects) {
+      const key = pairKey(cs.childId, cs.teacherId);
+      if (!pairInfoMap.has(key)) pairInfoMap.set(key, cs);
+    }
+
+    if (pairInfoMap.size === 0) return [];
+
+    const pairs = Array.from(pairInfoMap.values());
+    const childIds = [...new Set(pairs.map(p => p.childId))];
 
     const [payments, lessons, lessonPrices] = await Promise.all([
       this.prisma.payment.findMany({
@@ -142,7 +162,6 @@ export class LessonsService {
       }),
     ]);
 
-    // Most recent lesson price per pair (list is already desc by effectiveDate)
     const priceByPair = new Map<string, number>();
     for (const lp of lessonPrices) {
       const key = pairKey(lp.childId, lp.teacherId);
@@ -163,78 +182,61 @@ export class LessonsService {
       lessonsByPair.get(key)!.push({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' });
     }
 
-    return children
-      .filter(c => c.teacher !== null)
-      .map(c => {
-        const key = pairKey(c.id, c.teacherId!);
-        const pairPayments = paymentsByPair.get(key) ?? [];
-        const pairLessons = lessonsByPair.get(key) ?? [];
+    return pairs.map(({ child, teacher, childId: cId, teacherId: tId }) => {
+      const key = pairKey(cId, tId);
+      const pairPayments = paymentsByPair.get(key) ?? [];
+      const pairLessons = lessonsByPair.get(key) ?? [];
 
-        const records = computeAllocation(pairPayments, pairLessons);
+      const records = computeAllocation(pairPayments, pairLessons);
 
-        const lessonDebt = new Map<string, number>();
-        const lessonPrepaid = new Map<string, number>();
-        for (const r of records) {
-          if (r.type === 'DEBT') lessonDebt.set(r.lessonId, (lessonDebt.get(r.lessonId) ?? 0) + r.amount);
-          else lessonPrepaid.set(r.lessonId, (lessonPrepaid.get(r.lessonId) ?? 0) + r.amount);
-        }
+      const lessonDebt = new Map<string, number>();
+      const lessonPrepaid = new Map<string, number>();
+      for (const r of records) {
+        if (r.type === 'DEBT') lessonDebt.set(r.lessonId, (lessonDebt.get(r.lessonId) ?? 0) + r.amount);
+        else lessonPrepaid.set(r.lessonId, (lessonPrepaid.get(r.lessonId) ?? 0) + r.amount);
+      }
 
-        let totalDebtUah = 0;
-        let prepaidCount = 0;
-        for (const lesson of pairLessons) {
-          if (lesson.status === 'CONDUCTED') {
-            const paid = lessonDebt.get(lesson.id) ?? 0;
-            if (paid < lesson.price) {
-              totalDebtUah = Math.round((totalDebtUah + lesson.price - paid) * 100) / 100;
-            }
+      let totalDebtUah = 0;
+      let prepaidCount = 0;
+      for (const lesson of pairLessons) {
+        if (lesson.status === 'CONDUCTED') {
+          const paid = lessonDebt.get(lesson.id) ?? 0;
+          if (paid < lesson.price) {
+            totalDebtUah = Math.round((totalDebtUah + lesson.price - paid) * 100) / 100;
           }
-          if (lesson.status === 'PLANNED' && (lessonPrepaid.get(lesson.id) ?? 0) > 0) prepaidCount++;
         }
+        if (lesson.status === 'PLANNED' && (lessonPrepaid.get(lesson.id) ?? 0) > 0) prepaidCount++;
+      }
 
-        // Leftover money not yet assigned to any lesson
-        const totalPaid = pairPayments.reduce((s, p) => s + p.amount, 0);
-        const totalAllocated = records.reduce((s, r) => s + r.amount, 0);
-        const leftover = Math.round((totalPaid - totalAllocated) * 100) / 100;
+      const totalPaid = pairPayments.reduce((s, p) => s + p.amount, 0);
+      const totalAllocated = records.reduce((s, r) => s + r.amount, 0);
+      const leftover = Math.round((totalPaid - totalAllocated) * 100) / 100;
 
-        // Price source priority: LessonPrice table → most recent lesson's manual price
-        const lessonPrice = priceByPair.get(key)
-          ?? (pairLessons.length > 0 ? pairLessons[pairLessons.length - 1].price : undefined);
+      const lessonPrice = priceByPair.get(key)
+        ?? (pairLessons.length > 0 ? pairLessons[pairLessons.length - 1].price : undefined);
 
-        const round = (n: number) => Math.round(n * 100) / 100;
-        const floorLessons = (uah: number) =>
-          lessonPrice && lessonPrice > 0
-            ? Math.floor(Math.round(uah * 100) / Math.round(lessonPrice * 100))
-            : 0;
+      const round = (n: number) => Math.round(n * 100) / 100;
+      const floorLessons = (uah: number) =>
+        lessonPrice && lessonPrice > 0
+          ? Math.floor(Math.round(uah * 100) / Math.round(lessonPrice * 100))
+          : 0;
 
-        // Debt: split into full-lesson count + fractional UAH remainder
-        let debtCount = 0;
-        let debtUah = 0;
-        if (totalDebtUah > 0) {
-          debtCount = floorLessons(totalDebtUah);
-          debtUah = lessonPrice
-            ? round(totalDebtUah - debtCount * lessonPrice)
-            : totalDebtUah;
-        }
+      let debtCount = 0;
+      let debtUah = 0;
+      if (totalDebtUah > 0) {
+        debtCount = floorLessons(totalDebtUah);
+        debtUah = lessonPrice ? round(totalDebtUah - debtCount * lessonPrice) : totalDebtUah;
+      }
 
-        // Prepaid: actual prepaid lessons + virtual from leftover
-        let leftoverUah = 0;
-        if (leftover > 0) {
-          const virtualLessons = floorLessons(leftover);
-          prepaidCount += virtualLessons;
-          leftoverUah = lessonPrice
-            ? round(leftover - virtualLessons * lessonPrice)
-            : leftover;
-        }
+      let leftoverUah = 0;
+      if (leftover > 0) {
+        const virtualLessons = floorLessons(leftover);
+        prepaidCount += virtualLessons;
+        leftoverUah = lessonPrice ? round(leftover - virtualLessons * lessonPrice) : leftover;
+      }
 
-        return {
-          child: { id: c.id, name: c.name, avatar: c.avatar },
-          teacher: c.teacher!,
-          debtCount,
-          debtUah,
-          prepaidCount,
-          leftoverUah,
-        };
-      });
+      return { child, teacher, debtCount, debtUah, prepaidCount, leftoverUah };
+    });
   }
 
   async getOverdueCount(userId: string, userRole: Role): Promise<number> {
@@ -252,10 +254,10 @@ export class LessonsService {
     if (userRole === Role.TEACHER) {
       const child = await this.prisma.child.findUnique({
         where: { id: dto.childId },
-        select: { teacherId: true },
+        select: { subjects: { select: { teacherId: true } } },
       });
       if (!child) throw new NotFoundException('Child not found');
-      if (child.teacherId !== userId) {
+      if (!child.subjects.some((s) => s.teacherId === userId)) {
         throw new ForbiddenException(
           'You can only create lessons for your assigned students',
         );

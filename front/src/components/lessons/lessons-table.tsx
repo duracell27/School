@@ -98,7 +98,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const currentUser = useSessionStore((s) => s.user);
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
 
   function handleSort(key: SortKey) {
     if (sortKey !== key) {

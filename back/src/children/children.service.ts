@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateChildDto } from './dto/create-child.dto';
 import { UpdateChildDto } from './dto/update-child.dto';
+import { AddSubjectDto } from './dto/add-subject.dto';
 
 const childSelect = {
   id: true,
@@ -14,9 +15,13 @@ const childSelect = {
   graduationDate: true,
   parentContacts: true,
   timezone: true,
-  teacherId: true,
-  teacher: {
-    select: { id: true, name: true },
+  subjects: {
+    select: {
+      id: true,
+      subject: true,
+      teacher: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'asc' as const },
   },
   createdAt: true,
   updatedAt: true,
@@ -28,7 +33,7 @@ export class ChildrenService {
 
   findAll(teacherId?: string) {
     return this.prisma.child.findMany({
-      where: teacherId ? { teacherId } : undefined,
+      where: teacherId ? { subjects: { some: { teacherId } } } : undefined,
       select: childSelect,
     });
   }
@@ -67,15 +72,31 @@ export class ChildrenService {
       ...(hireDate ? { hireDate: new Date(hireDate) } : {}),
       ...(graduationDate ? { graduationDate: new Date(graduationDate) } : {}),
     };
-    return this.prisma.child.update({
-      where: { id },
-      data,
-      select: childSelect,
-    });
+    return this.prisma.child.update({ where: { id }, data, select: childSelect });
   }
 
   async remove(id: string): Promise<void> {
     await this.findOne(id);
     await this.prisma.child.delete({ where: { id } });
+  }
+
+  async addSubject(childId: string, dto: AddSubjectDto) {
+    try {
+      return await this.prisma.childSubject.create({
+        data: { childId, teacherId: dto.teacherId, subject: dto.subject },
+        select: { id: true, subject: true, teacher: { select: { id: true, name: true } } },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictException('Subject already assigned for this teacher');
+      }
+      throw e;
+    }
+  }
+
+  async removeSubject(subjectId: string): Promise<void> {
+    const record = await this.prisma.childSubject.findUnique({ where: { id: subjectId } });
+    if (!record) throw new NotFoundException('Subject assignment not found');
+    await this.prisma.childSubject.delete({ where: { id: subjectId } });
   }
 }

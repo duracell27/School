@@ -16,14 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useCreateChild, useUpdateChild } from '@/lib/children';
-import { useUsers } from '@/lib/users';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { DEFAULT_COUNTRY } from '@/lib/countries';
 import { CountrySelect } from './country-select';
@@ -59,7 +54,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [country, setCountry] = useState(DEFAULT_COUNTRY);
   const [timezone, setTimezone] = useState('+2');
-  const [teacherId, setTeacherId] = useState('');
   const [momPhone, setMomPhone] = useState('');
   const [dadPhone, setDadPhone] = useState('');
   const [showDad, setShowDad] = useState(false);
@@ -67,7 +61,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
 
   const createChild = useCreateChild();
   const updateChild = useUpdateChild();
-  const { data: users = [] } = useUsers();
 
   const {
     register,
@@ -92,7 +85,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
       setAvatarUrl(child.avatar ?? null);
       setCountry(child.country);
       setTimezone(child.timezone);
-      setTeacherId(child.teacherId ?? '');
       const mom = child.parentContacts.find((c) => c.label === 'Мама');
       const dad = child.parentContacts.find((c) => c.label === 'Тато');
       setMomPhone(mom?.phone ?? '');
@@ -103,7 +95,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
       setAvatarUrl(null);
       setCountry(DEFAULT_COUNTRY);
       setTimezone('+2');
-      setTeacherId('');
       setMomPhone('');
       setDadPhone('');
       setShowDad(false);
@@ -140,7 +131,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
         timezone,
         parentContacts,
         ...(avatarUrl ? { avatar: avatarUrl } : {}),
-        ...(teacherId ? { teacherId } : {}),
         ...(data.hireDate ? { hireDate: data.hireDate } : {}),
         ...(data.graduationDate ? { graduationDate: data.graduationDate } : {}),
       };
@@ -247,25 +237,6 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
                 onChange={(e) => setDadPhone(e.target.value)}
               />
             )}
-          </div>
-
-          <div className="space-y-1">
-            <Label>Вчитель</Label>
-            <Select value={teacherId} onValueChange={(v) => setTeacherId(v ?? '')}>
-              <SelectTrigger>
-                <SelectValue>
-                  {teacherId
-                    ? (users.find((u) => u.id === teacherId)?.name ?? 'Вчитель')
-                    : 'Без вчителя'}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Без вчителя</SelectItem>
-                {users.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

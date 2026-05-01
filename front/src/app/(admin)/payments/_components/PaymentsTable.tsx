@@ -5,6 +5,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
@@ -36,6 +40,7 @@ interface PaymentsTableProps {
 export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const deletePayment = useDeletePayment();
 
   function handleSort(key: SortKey) {
@@ -61,6 +66,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
   }
 
   return (
+    <>
     <Table>
       <TableHeader>
         <TableRow>
@@ -95,7 +101,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
                 <Button variant="outline" size="sm" onClick={() => onEdit(payment)}>Редагувати</Button>
                 <Button
                   variant="destructive" size="sm"
-                  onClick={() => deletePayment.mutate(payment.id)}
+                  onClick={() => setConfirmId(payment.id)}
                   disabled={deletePayment.isPending}
                 >
                   Видалити
@@ -111,5 +117,26 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
         )}
       </TableBody>
     </Table>
+
+    <AlertDialog open={!!confirmId} onOpenChange={(v) => !v && setConfirmId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Видалити оплату?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Цю дію неможливо скасувати. Баланс буде перераховано.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Скасувати</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => { if (confirmId) deletePayment.mutate(confirmId); setConfirmId(null); }}
+          >
+            Видалити
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

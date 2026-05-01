@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { useSessionStore } from '@/store/session.store';
 import { useOverdueCount } from '@/lib/lessons';
+import { useSchoolAccount } from '@/lib/payments';
+import { formatCurrency } from '@/lib/format';
 import type { User } from '@/types/user';
 
 interface RefreshResponse {
@@ -30,6 +32,16 @@ function NavBadge({ count }: { count: number }) {
     <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
       {count > 99 ? '99+' : count}
     </span>
+  );
+}
+
+function SidebarSchoolBalance() {
+  const { data } = useSchoolAccount();
+  if (data == null) return null;
+  return (
+    <p className="text-[11px] text-gray-400 mt-0.5">
+      Баланс школи: <span className="font-semibold text-black">{formatCurrency(data.balance)}</span>
+    </p>
   );
 }
 
@@ -68,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     apiFetch<RefreshResponse>('/auth/refresh', { method: 'POST' })
       .then(({ user }) => {
-        if (user.role !== 'ADMIN') {
+        if (user.role !== 'ADMIN' && user.role !== 'ADMIN_TEACHER') {
           router.replace('/login');
           return;
         }
@@ -93,6 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-56 shrink-0 bg-white border-r flex flex-col">
         <div className="px-5 py-5 border-b">
           <span className="font-semibold text-sm">Teacher Platform</span>
+          <SidebarSchoolBalance />
         </div>
 
         <NavContent />

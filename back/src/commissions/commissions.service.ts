@@ -1,8 +1,9 @@
-import { Injectable, ConflictException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Prisma, Role, SchoolTransactionReason } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCommissionDto } from './dto/create-commission.dto';
 import { CreatePayoutDto } from './dto/create-payout.dto';
+import { UpdatePayoutDto } from './dto/update-payout.dto';
 
 @Injectable()
 export class CommissionsService {
@@ -36,15 +37,58 @@ export class CommissionsService {
   }
 
   async createPayout(dto: CreatePayoutDto, adminId: string) {
-    return this.prisma.teacherPayout.create({
-      data: {
-        teacherId: dto.teacherId,
-        amount: new Prisma.Decimal(dto.amount),
-        notes: dto.notes,
-        adminId,
-      },
-      select: { id: true, teacherId: true, amount: true, notes: true, createdAt: true },
+    return this.prisma.$transaction(async (tx) => {
+      const payout = await tx.teacherPayout.create({
+        data: {
+          teacherId: dto.teacherId,
+          amount: new Prisma.Decimal(dto.amount),
+          notes: dto.notes,
+          adminId,
+        },
+        select: { id: true, teacherId: true, amount: true, notes: true, createdAt: true,
+                  admin: { select: { id: true, name: true } } },
+      });
+      await tx.schoolTransaction.create({
+        data: {
+          amount: new Prisma.Decimal(-Number(dto.amount)),
+          reason: SchoolTransactionReason.TEACHER_PAYOUT,
+          adminId,
+          teacherPayoutId: payout.id,
+        },
+      });
+      return payout;
     });
+  }
+
+  async updatePayout(id: string, dto: UpdatePayoutDto) {
+    const payout = await this.prisma.teacherPayout.findUnique({ where: { id } });
+    if (!payout) throw new NotFoundException('Payout not found');
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.teacherPayout.update({
+        where: { id },
+        data: {
+          ...(dto.amount !== undefined ? { amount: new Prisma.Decimal(dto.amount) } : {}),
+          ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
+        },
+        select: { id: true, amount: true, notes: true, createdAt: true,
+                  admin: { select: { id: true, name: true } } },
+      });
+      if (dto.amount !== undefined) {
+        await tx.schoolTransaction.updateMany({
+          where: { teacherPayoutId: id },
+          data: { amount: new Prisma.Decimal(-Number(dto.amount)) },
+        });
+      }
+      return updated;
+    });
+  }
+
+  async deletePayout(id: string) {
+    const payout = await this.prisma.teacherPayout.findUnique({ where: { id } });
+    if (!payout) throw new NotFoundException('Payout not found');
+    // SchoolTransaction cascades via teacherPayoutId
+    await this.prisma.teacherPayout.delete({ where: { id } });
   }
 
   async getPayouts(teacherId: string) {
@@ -107,7 +151,7 @@ export class CommissionsService {
 
   async getAllTeachersWithBalances() {
     const teachers = await this.prisma.user.findMany({
-      where: { role: 'TEACHER' },
+      where: { status: 'WORKING', role: { in: [Role.TEACHER, Role.ADMIN_TEACHER] } },
       orderBy: { name: 'asc' },
       select: { id: true, name: true, avatar: true, status: true },
     });

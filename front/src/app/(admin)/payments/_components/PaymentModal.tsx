@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { ChildSelect } from '@/components/shared/child-select';
 import { useUsers } from '@/lib/users';
 import { useChildren } from '@/lib/children';
 import { useCreatePayment, useUpdatePayment } from '@/lib/payments';
@@ -24,36 +25,49 @@ interface PaymentModalProps {
 
 export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
   const isEdit = !!payment;
-  const { data: users = [] } = useUsers();
-  const teachers = users.filter(u => u.status === 'WORKING');
 
-  const [teacherId, setTeacherId] = useState(payment?.teacher.id ?? '');
-  const [childId, setChildId] = useState(payment?.child.id ?? '');
-  const [amount, setAmount] = useState(payment ? String(Number(payment.amount)) : '');
-  const [date, setDate] = useState(
-    payment ? payment.date.split('T')[0] : new Date().toISOString().split('T')[0]
-  );
-  const [notes, setNotes] = useState(payment?.notes ?? '');
+  const { data: allChildren = [] } = useChildren();
+  const { data: users = [] } = useUsers();
+  const allTeachers = users.filter(u => u.status === 'WORKING');
+
+  const [childId, setChildId] = useState('');
+  const [teacherId, setTeacherId] = useState('');
+
+  const selectedChild = allChildren.find(c => c.id === childId) ?? null;
+  const childTeacherIds = new Set((selectedChild?.subjects ?? []).map(s => s.teacher.id));
+  const teachers = childId && childTeacherIds.size > 0
+    ? allTeachers.filter(u => childTeacherIds.has(u.id))
+    : allTeachers;
+  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (payment) {
-      setTeacherId(payment.teacher.id);
       setChildId(payment.child.id);
+      setTeacherId(payment.teacher.id);
       setAmount(String(Number(payment.amount)));
       setDate(payment.date.split('T')[0]);
       setNotes(payment.notes ?? '');
     } else {
-      setTeacherId('');
       setChildId('');
+      setTeacherId('');
       setAmount('');
       setDate(new Date().toISOString().split('T')[0]);
       setNotes('');
     }
   }, [payment, open]);
 
-  const { data: children = [] } = useChildren(teacherId ? { teacherId } : {});
+  function handleChildChange(id: string) {
+    setChildId(id);
+    if (isEdit) return;
+    const child = allChildren.find(c => c.id === id);
+    const uniqueTeachers = [...new Set((child?.subjects ?? []).map(s => s.teacher.id))];
+    setTeacherId(uniqueTeachers.length === 1 ? uniqueTeachers[0] : '');
+  }
+
   const { data: lessonPrices = [] } = useLessonPrices();
-  const lessonPrice = (childId && teacherId)
+  const lessonPrice = childId && teacherId
     ? lessonPrices.find(lp => lp.child.id === childId && lp.teacher.id === teacherId)
     : null;
 
@@ -80,8 +94,27 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
 
         <div className="space-y-4 py-2">
           <div className="space-y-1">
+            <Label>Учень</Label>
+            {isEdit ? (
+              <div className="h-9 px-3 flex items-center text-sm border rounded-lg bg-muted text-muted-foreground">
+                {payment?.child.name}
+              </div>
+            ) : (
+              <ChildSelect
+                children={allChildren}
+                value={childId}
+                onChange={handleChildChange}
+              />
+            )}
+          </div>
+
+          <div className="space-y-1">
             <Label>Вчитель</Label>
-            <Select value={teacherId} onValueChange={v => { setTeacherId(v ?? ''); setChildId(''); }} disabled={isEdit}>
+            <Select
+              value={teacherId}
+              onValueChange={v => setTeacherId(v ?? '')}
+              disabled={isEdit}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Оберіть вчителя">
                   {teacherId
@@ -97,28 +130,11 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
             </Select>
           </div>
 
-          <div className="space-y-1">
-            <Label>Дитина</Label>
-            <Select value={childId} onValueChange={v => setChildId(v ?? '')} disabled={!teacherId || isEdit}>
-              <SelectTrigger>
-                <SelectValue placeholder="Оберіть дитину">
-                  {childId
-                    ? (children.find(c => c.id === childId)?.name ?? payment?.child.name)
-                    : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {children.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {lessonPrice && (
-              <p className="text-sm text-muted-foreground">
-                Ціна за заняття: <span className="font-medium text-foreground">{lessonPrice.price} грн</span>
-              </p>
-            )}
-          </div>
+          {lessonPrice && (
+            <p className="text-sm text-muted-foreground -mt-2">
+              Ціна за заняття: <span className="font-medium text-foreground">{lessonPrice.price} грн</span>
+            </p>
+          )}
 
           <div className="space-y-1">
             <Label>Сума (грн)</Label>

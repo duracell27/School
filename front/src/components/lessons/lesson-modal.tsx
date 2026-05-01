@@ -20,7 +20,8 @@ import { useCreateLesson, useUpdateLesson, usePriceSuggestion } from '@/lib/less
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { useSessionStore } from '@/store/session.store';
-import type { Lesson, LessonStatus } from '@/types/lesson';
+import { SUBJECTS } from '@/lib/subjects';
+import type { Lesson, LessonStatus, Subject } from '@/types/lesson';
 
 const STATUSES: { value: LessonStatus; label: string }[] = [
   { value: 'PLANNED', label: 'Заплановано' },
@@ -61,20 +62,27 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
   const [childId, setChildId] = useState('');
   const [teacherId, setTeacherId] = useState('');
   const [status, setStatus] = useState<LessonStatus>('PLANNED');
+  const [subject, setSubject] = useState<Subject | ''>('');
   const [startDateVal, setStartDateVal] = useState('');
 
   const currentUser = useSessionStore((s) => s.user);
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
 
   const createLesson = useCreateLesson();
   const updateLesson = useUpdateLesson();
   const { data: children = [] } = useChildren();
   const { data: users = [] } = useUsers({ enabled: isAdmin });
 
+  const selectedChild = children.find((c) => c.id === childId) ?? null;
+  const availableSubjects = selectedChild
+    ? selectedChild.subjects.filter((s) => !teacherId || s.teacher.id === teacherId)
+    : [];
+
   const { data: suggestedPrice } = usePriceSuggestion(
     childId || null,
     teacherId || null,
     startDateVal ? new Date(startDateVal).toISOString() : null,
+    subject || null,
   );
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } =
@@ -102,6 +110,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
       setChildId(lesson.child.id);
       setTeacherId(lesson.teacher.id);
       setStatus(lesson.status);
+      setSubject(lesson.subject ?? '');
     } else {
       reset({
         startDate: defaultStartDate ? toDatetimeLocal(defaultStartDate) : '',
@@ -113,8 +122,25 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
       setChildId(defaultChildId ?? '');
       setTeacherId(defaultTeacherId ?? (isAdmin ? '' : (currentUser?.id ?? '')));
       setStatus('PLANNED');
+      setSubject('');
     }
   }, [lesson, open, isAdmin, currentUser?.id, defaultStartDate, defaultEndDate, defaultTeacherId, defaultChildId]);
+
+  // Auto-fill teacher when child changes (admin only, not editing)
+  useEffect(() => {
+    if (!isAdmin || isEdit || !childId) return;
+    const uniqueTeachers = [...new Set((selectedChild?.subjects ?? []).map((s) => s.teacher.id))];
+    if (uniqueTeachers.length === 1) setTeacherId(uniqueTeachers[0]);
+    else setTeacherId('');
+    setSubject('');
+  }, [childId]);
+
+  // Auto-fill subject when only one available for the (child, teacher) pair
+  useEffect(() => {
+    if (isEdit) return;
+    if (availableSubjects.length === 1) setSubject(availableSubjects[0].subject);
+    else if (availableSubjects.length === 0) setSubject('');
+  }, [childId, teacherId]);
 
   async function onSubmit(data: FormValues) {
     if (!childId || !teacherId) { setSubmitError('Оберіть учня та вчителя'); return; }
@@ -123,6 +149,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
         childId,
         teacherId,
         status,
+        ...(subject ? { subject: subject as Subject } : {}),
         startDate: new Date(data.startDate).toISOString(),
         endDate: new Date(data.endDate).toISOString(),
         price: data.price,
@@ -181,6 +208,27 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
               <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+
+          {availableSubjects.length > 0 && (
+            <div className="space-y-1">
+              <Label>Предмет</Label>
+              <Select value={subject} onValueChange={(v) => setSubject(v as Subject)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Оберіть предмет" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableSubjects.map((s) => {
+                    const meta = SUBJECTS.find((m) => m.value === s.subject);
+                    return (
+                      <SelectItem key={s.id} value={s.subject}>
+                        {meta?.emoji} {meta?.label ?? s.subject}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="space-y-1.5">

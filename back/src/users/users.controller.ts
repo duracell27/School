@@ -41,7 +41,7 @@ export class UsersController {
     @CurrentUser('sub') userId: string,
     @CurrentUser('role') role: Role,
   ) {
-    if (role !== Role.ADMIN && userId !== id) {
+    if (role !== Role.ADMIN && role !== Role.ADMIN_TEACHER && userId !== id) {
       throw new ForbiddenException('Access denied');
     }
     return this.users.findOne(id);
@@ -54,10 +54,10 @@ export class UsersController {
     @CurrentUser('sub') userId: string,
     @CurrentUser('role') role: Role,
   ) {
-    if (role !== Role.ADMIN && userId !== id) {
+    if (role !== Role.ADMIN && role !== Role.ADMIN_TEACHER && userId !== id) {
       throw new ForbiddenException('Access denied');
     }
-    if (role !== Role.ADMIN && dto.role !== undefined) {
+    if (role !== Role.ADMIN && role !== Role.ADMIN_TEACHER && dto.role !== undefined) {
       throw new ForbiddenException('Cannot change your own role');
     }
     return this.users.update(id, dto);

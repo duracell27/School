@@ -10,12 +10,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ChildSelect } from '@/components/shared/child-select';
 import { TeacherSelect } from '@/components/shared/teacher-select';
 import { useCreateLessonPrice, useUpdateLessonPrice, useLessonPrices } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
-import type { LessonPrice } from '@/types/lesson';
+import { SUBJECTS } from '@/lib/subjects';
+import type { LessonPrice, Subject } from '@/types/lesson';
 
 const schema = z.object({
   price: z.coerce.number().positive('Вкажіть ціну'),
@@ -34,12 +38,31 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
   const [submitError, setSubmitError] = useState('');
   const [childId, setChildId] = useState('');
   const [teacherId, setTeacherId] = useState('');
+  const [subject, setSubject] = useState<Subject | ''>('');
 
   const createPrice = useCreateLessonPrice();
   const updatePrice = useUpdateLessonPrice();
   const { data: children = [] } = useChildren();
   const { data: users = [] } = useUsers();
   const { data: allPrices = [] } = useLessonPrices();
+
+  const selectedChild = children.find((c) => c.id === childId) ?? null;
+
+  // Teachers available for this child (from subjects)
+  const availableTeachers = useMemo(() => {
+    if (!selectedChild) return users;
+    const ids = new Set(selectedChild.subjects.map((s) => s.teacher.id));
+    return users.filter((u) => ids.has(u.id));
+  }, [selectedChild, users]);
+
+  // Subjects available for this (child, teacher) pair
+  const availableSubjects = useMemo(() => {
+    if (!selectedChild) return SUBJECTS;
+    const subs = teacherId
+      ? selectedChild.subjects.filter((s) => s.teacher.id === teacherId)
+      : selectedChild.subjects;
+    return SUBJECTS.filter((s) => subs.some((cs) => cs.subject === s.value));
+  }, [selectedChild, teacherId]);
 
   const latestPriceByChild = useMemo(() => {
     if (!teacherId) return {} as Record<string, string>;
@@ -62,17 +85,38 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
       reset({ price: Number(price.price), effectiveDate: price.effectiveDate.slice(0, 10) });
       setChildId(price.child.id);
       setTeacherId(price.teacher.id);
+      setSubject(price.subject ?? '');
     } else {
       reset({ price: undefined as never, effectiveDate: '' });
       setChildId('');
       setTeacherId('');
+      setSubject('');
     }
   }, [price, open]);
+
+  // Auto-fill teacher when child changes (only when creating)
+  useEffect(() => {
+    if (isEdit || !childId) return;
+    const ids = [...new Set((selectedChild?.subjects ?? []).map((s) => s.teacher.id))];
+    if (ids.length === 1) setTeacherId(ids[0]);
+    else setTeacherId('');
+    setSubject('');
+  }, [childId]);
+
+  // Auto-fill subject when (child, teacher) pair changes
+  useEffect(() => {
+    if (isEdit) return;
+    if (availableSubjects.length === 1) setSubject(availableSubjects[0].value);
+    else if (availableSubjects.length === 0) setSubject('');
+  }, [childId, teacherId]);
 
   async function onSubmit(data: FormValues) {
     if (!childId || !teacherId) { setSubmitError('Оберіть учня та вчителя'); return; }
     try {
-      const payload = { childId, teacherId, price: data.price, effectiveDate: data.effectiveDate };
+      const payload = {
+        childId, teacherId, price: data.price, effectiveDate: data.effectiveDate,
+        ...(subject ? { subject: subject as Subject } : {}),
+      };
       if (isEdit) {
         await updatePrice.mutateAsync({ id: price.id, data: payload });
       } else {
@@ -108,8 +152,31 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
           </div>
           <div className="space-y-1">
             <Label>Вчитель</Label>
-            <TeacherSelect users={users} value={teacherId} onChange={setTeacherId} />
+            <TeacherSelect
+              users={availableTeachers}
+              value={teacherId}
+              onChange={(v) => { setTeacherId(v); setSubject(''); }}
+              disabled={isEdit}
+            />
           </div>
+          {availableSubjects.length > 0 && (
+            <div className="space-y-1">
+              <Label>Предмет (необов&apos;язково)</Label>
+              <Select value={subject || '__none__'} onValueChange={(v) => setSubject(v === '__none__' ? '' : v as Subject)} disabled={isEdit}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Не вказано" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">— Не вказано —</SelectItem>
+                  {availableSubjects.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.emoji} {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="lp-price">Ціна (грн)</Label>

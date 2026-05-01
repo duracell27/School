@@ -30,7 +30,7 @@ import type { User } from '@/types/user';
 const baseFields = {
   name: z.string().min(1, "Обов'язкове поле"),
   email: z.string().email('Невірний email'),
-  role: z.enum(['ADMIN', 'TEACHER']),
+  role: z.enum(['ADMIN', 'TEACHER', 'ADMIN_TEACHER']),
   status: z.enum(['WORKING', 'FIRED']),
   hireDate: z.string().optional(),
   terminationDate: z.string().optional(),
@@ -203,13 +203,16 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Роль</Label>
-              <Select value={watch('role')} onValueChange={(v) => setValue('role', v as 'ADMIN' | 'TEACHER')}>
+              <Select value={watch('role')} onValueChange={(v) => setValue('role', v as 'ADMIN' | 'TEACHER' | 'ADMIN_TEACHER')}>
                 <SelectTrigger>
-                  <SelectValue>{watch('role') === 'ADMIN' ? 'Адміністратор' : 'Вчитель'}</SelectValue>
+                  <SelectValue>
+                    {watch('role') === 'ADMIN' ? 'Адміністратор' : watch('role') === 'ADMIN_TEACHER' ? 'Адмін-вчитель' : 'Вчитель'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="TEACHER">Вчитель</SelectItem>
                   <SelectItem value="ADMIN">Адміністратор</SelectItem>
+                  <SelectItem value="ADMIN_TEACHER">Адмін-вчитель</SelectItem>
                 </SelectContent>
               </Select>
             </div>

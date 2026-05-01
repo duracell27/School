@@ -67,7 +67,7 @@ interface LessonPopoverState {
 
 export default function CalendarPage() {
   const currentUser = useSessionStore((s) => s.user);
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
 
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
   const [selectedTeacherId, setSelectedTeacherId] = useState(() => currentUser?.id ?? '');

@@ -74,7 +74,7 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('month');
   const [offset, setOffset] = useState(0);
   const currentUser = useSessionStore((s) => s.user);
-  const isAdmin = currentUser?.role === 'ADMIN';
+  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
 
   const referenceDate = useMemo(() => computeReferenceDate(period, offset), [period, offset]);
   const dateParam = [

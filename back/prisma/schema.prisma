@@ -9,6 +9,12 @@ datasource db {
 enum Role {
   ADMIN
   TEACHER
+  ADMIN_TEACHER
+}
+
+enum Subject {
+  MATH
+  UKRAINIAN
 }
 
 enum EmploymentStatus {
@@ -34,7 +40,6 @@ model User {
   hireDate           DateTime?
   terminationDate    DateTime?
   refreshToken       String?
-  children           Child[]
   lessons            Lesson[]
   lessonPrices       LessonPrice[]
   paymentsAsTeacher  Payment[]           @relation("PaymentTeacher")
@@ -45,6 +50,7 @@ model User {
   teacherEarnings        TeacherEarning[]
   teacherPayoutsReceived TeacherPayout[]      @relation("TeacherPayoutReceiver")
   teacherPayoutsAdmined  TeacherPayout[]      @relation("TeacherPayoutAdmin")
+  childSubjectsTeaching  ChildSubject[]       @relation("ChildSubjectTeacher")
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 }
@@ -59,11 +65,10 @@ model Child {
   graduationDate DateTime?
   parentContacts Json          @default("[]")
   timezone       String
-  teacherId      String?
-  teacher        User?         @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   lessons        Lesson[]
   lessonPrices   LessonPrice[]
   payments       Payment[]
+  subjects       ChildSubject[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 }
@@ -80,6 +85,7 @@ model Lesson {
   price             Decimal
   originalStartDate DateTime?
   originalEndDate   DateTime?
+  subject            Subject?
   paymentLessons     PaymentLesson[]
   teacherEarnings    TeacherEarning[]
   schoolTransactions SchoolTransaction[]
@@ -96,12 +102,13 @@ model LessonPrice {
   child         Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   teacherId     String
   teacher       User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject       Subject?
   price         Decimal
   effectiveDate DateTime
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@index([childId, teacherId, effectiveDate])
+  @@index([childId, teacherId, subject, effectiveDate])
 }
 
 enum PaymentLessonType {
@@ -113,6 +120,7 @@ enum SchoolTransactionReason {
   OVERPAYMENT_WRITEOFF
   UNDERPAYMENT_TOPUP
   LESSON_SCHOOL_SHARE
+  TEACHER_PAYOUT
 }
 
 model Payment {
@@ -152,19 +160,34 @@ model PaymentLesson {
 }
 
 model SchoolTransaction {
-  id        String                  @id @default(cuid())
-  amount    Decimal
-  reason    SchoolTransactionReason
-  paymentId String?
-  payment   Payment?                @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-  lessonId  String?
-  lesson    Lesson?                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  adminId   String?
-  admin     User?                   @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: SetNull)
-  note      String?
-  createdAt DateTime                @default(now())
+  id              String                  @id @default(cuid())
+  amount          Decimal
+  reason          SchoolTransactionReason
+  paymentId       String?
+  payment         Payment?                @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  lessonId        String?
+  lesson          Lesson?                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  adminId         String?
+  admin           User?                   @relation("SchoolTxAdmin", fields: [adminId], references: [id], onDelete: SetNull)
+  teacherPayoutId String?                 @unique
+  teacherPayout   TeacherPayout?          @relation(fields: [teacherPayoutId], references: [id], onDelete: Cascade)
+  note            String?
+  createdAt       DateTime                @default(now())
 
   @@index([lessonId, reason])
+}
+
+model ChildSubject {
+  id        String   @id @default(cuid())
+  childId   String
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   User     @relation("ChildSubjectTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject
+  createdAt DateTime @default(now())
+
+  @@unique([childId, teacherId, subject])
+  @@index([childId])
 }
 
 model TeacherCommission {
@@ -196,14 +219,15 @@ model TeacherEarning {
 }
 
 model TeacherPayout {
-  id        String   @id @default(cuid())
-  teacherId String
-  teacher   User     @relation("TeacherPayoutReceiver", fields: [teacherId], references: [id], onDelete: Restrict)
-  amount    Decimal
-  adminId   String
-  admin     User     @relation("TeacherPayoutAdmin", fields: [adminId], references: [id], onDelete: Restrict)
-  notes     String?
-  createdAt DateTime @default(now())
+  id                String             @id @default(cuid())
+  teacherId         String
+  teacher           User               @relation("TeacherPayoutReceiver", fields: [teacherId], references: [id], onDelete: Restrict)
+  amount            Decimal
+  adminId           String
+  admin             User               @relation("TeacherPayoutAdmin", fields: [adminId], references: [id], onDelete: Restrict)
+  notes             String?
+  schoolTransaction SchoolTransaction?
+  createdAt         DateTime           @default(now())
 
   @@index([teacherId])
 }

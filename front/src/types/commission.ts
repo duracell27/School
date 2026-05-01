@@ -42,3 +42,8 @@ export interface CreatePayoutPayload {
   amount: string;
   notes?: string;
 }
+
+export interface UpdatePayoutPayload {
+  amount?: string;
+  notes?: string;
+}

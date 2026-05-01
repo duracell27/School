@@ -186,19 +186,19 @@ export class DashboardService {
   async getChildrenStats(userId: string, userRole: Role) {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
+    const subjectFilter: Prisma.ChildWhereInput = userRole === Role.TEACHER
+      ? { subjects: { some: { teacherId: userId } } }
+      : {};
 
     const activeWhere: Prisma.ChildWhereInput = {
-      ...(userRole === Role.TEACHER
-        ? { teacherId: userId }
-        : { teacherId: { not: null } }),
+      ...subjectFilter,
       OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
     };
 
     const [active, newThisMonth, byCountryRaw] = await Promise.all([
       this.prisma.child.count({ where: activeWhere }),
       this.prisma.child.count({
-        where: { ...teacherFilter, hireDate: { gte: monthStart } },
+        where: { ...subjectFilter, hireDate: { gte: monthStart } },
       }),
       this.prisma.child.groupBy({
         by: ['country'],
@@ -220,16 +220,16 @@ export class DashboardService {
     const now = new Date();
 
     const teachers = await this.prisma.user.findMany({
-      where: { role: { in: [Role.TEACHER, Role.ADMIN] }, status: 'WORKING' },
+      where: { role: { in: [Role.TEACHER, Role.ADMIN, Role.ADMIN_TEACHER] }, status: 'WORKING' },
       select: {
         id: true,
         name: true,
         avatar: true,
-        children: {
+        childSubjectsTeaching: {
           where: {
-            OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
+            child: { OR: [{ graduationDate: null }, { graduationDate: { gt: now } }] },
           },
-          select: { id: true },
+          select: { childId: true },
         },
         lessons: {
           where: { startDate: { gte: start, lt: end } },
@@ -250,7 +250,7 @@ export class DashboardService {
         expected: t.lessons
           .filter((l) => l.status === 'PLANNED' && new Date(l.startDate) >= now)
           .reduce((sum, l) => sum + Number(l.price), 0),
-        childrenCount: t.children.length,
+        childrenCount: new Set(t.childSubjectsTeaching.map((cs) => cs.childId)).size,
       }))
       .sort((a, b) => b.lessonsCount - a.lessonsCount);
   }

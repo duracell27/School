@@ -24,11 +24,14 @@ export interface LessonTeacher {
   avatar: string | null;
 }
 
+export type Subject = 'MATH' | 'UKRAINIAN';
+
 export interface Lesson {
   id: string;
   child: LessonChild;
   teacher: LessonTeacher;
   status: LessonStatus;
+  subject: Subject | null;
   startDate: string;
   endDate: string;
   price: string;
@@ -43,6 +46,7 @@ export interface CreateLessonPayload {
   childId: string;
   teacherId: string;
   status?: LessonStatus;
+  subject?: Subject;
   startDate: string;
   endDate: string;
   price: number;
@@ -54,6 +58,7 @@ export interface UpdateLessonPayload {
   childId?: string;
   teacherId?: string;
   status?: LessonStatus;
+  subject?: Subject;
   startDate?: string;
   endDate?: string;
   price?: number;
@@ -66,6 +71,7 @@ export interface LessonPrice {
   child: LessonChild;
   teacher: LessonTeacher;
   price: string;
+  subject: Subject | null;
   effectiveDate: string;
   createdAt: string;
   updatedAt: string;
@@ -76,6 +82,7 @@ export interface CreateLessonPricePayload {
   teacherId: string;
   price: number;
   effectiveDate: string;
+  subject?: Subject;
 }
 
 export interface UpdateLessonPricePayload {
@@ -83,4 +90,5 @@ export interface UpdateLessonPricePayload {
   teacherId?: string;
   price?: number;
   effectiveDate?: string;
+  subject?: Subject;
 }

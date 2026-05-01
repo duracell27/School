@@ -164,9 +164,9 @@ export class PaymentsService {
         const pct = commissionCache.get(dateKey);
         if (pct === null || pct === undefined) continue;
 
-        // Fix 3: derive schoolAmt from teacherAmt to avoid dual-rounding discrepancy
         const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
-        const schoolAmt = Math.round((Number(pl.amount) - teacherAmt) * 100) / 100;
+        // Full lesson payment credited to school; teacher commission tracked as owed (TeacherEarning)
+        const schoolAmt = Number(pl.amount);
 
         // Fix 4: guard zero-amount entries
         if (teacherAmt > 0) {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChildrenTable } from '@/components/children/children-table';
 import { ChildModal } from '@/components/children/child-modal';
 import { DeleteDialog } from '@/components/children/delete-dialog';
+import { ChildSubjectsModal } from '@/components/children/child-subjects-modal';
 import { useChildren } from '@/lib/children';
 import type { Child } from '@/types/child';
 
@@ -14,11 +15,13 @@ type ModalState =
   | { open: true; mode: 'edit'; child: Child };
 
 type DeleteState = { open: false } | { open: true; child: Child };
+type SubjectsState = { open: false } | { open: true; child: Child };
 
 export default function ChildrenPage() {
   const { data: children = [], isLoading, error } = useChildren();
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false });
+  const [subjectsState, setSubjectsState] = useState<SubjectsState>({ open: false });
 
   if (isLoading) return <p className="text-gray-500">Завантаження...</p>;
   if (error) return <p className="text-red-500">Помилка завантаження дітей</p>;
@@ -40,6 +43,7 @@ export default function ChildrenPage() {
           children={children}
           onEdit={(child) => setModal({ open: true, mode: 'edit', child })}
           onDelete={(child) => setDeleteState({ open: true, child })}
+          onManageSubjects={(child) => setSubjectsState({ open: true, child })}
         />
       </div>
 
@@ -53,6 +57,12 @@ export default function ChildrenPage() {
         open={deleteState.open}
         child={deleteState.open ? deleteState.child : null}
         onClose={() => setDeleteState({ open: false })}
+      />
+
+      <ChildSubjectsModal
+        open={subjectsState.open}
+        child={subjectsState.open ? subjectsState.child : null}
+        onClose={() => setSubjectsState({ open: false })}
       />
     </div>
   );

@@ -9,6 +9,7 @@ const lessonPriceSelect = {
   child: { select: { id: true, name: true, avatar: true } },
   teacher: { select: { id: true, name: true, avatar: true } },
   price: true,
+  subject: true,
   effectiveDate: true,
   createdAt: true,
   updatedAt: true,
@@ -41,6 +42,7 @@ export class LessonPricesService {
         teacherId: dto.teacherId,
         price: dto.price,
         effectiveDate: new Date(dto.effectiveDate),
+        ...(dto.subject ? { subject: dto.subject } : {}),
       },
       select: lessonPriceSelect,
     });
@@ -55,6 +57,7 @@ export class LessonPricesService {
         ...(dto.teacherId !== undefined ? { teacherId: dto.teacherId } : {}),
         ...(dto.price !== undefined ? { price: dto.price } : {}),
         ...(dto.effectiveDate !== undefined ? { effectiveDate: new Date(dto.effectiveDate) } : {}),
+        ...(dto.subject !== undefined ? { subject: dto.subject } : {}),
       },
       select: lessonPriceSelect,
     });
