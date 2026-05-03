@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragOverEvent, type DragStartEvent } from '@dnd-kit/core';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,7 @@ export default function CalendarPage() {
   const [lessonPopover, setLessonPopover] = useState<LessonPopoverState | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ hour: number; minute: number } | null>(null);
+  const dragJustEnded = useRef(false);
 
   const { data: users = [] } = useUsers();
   const teacherId = isAdmin ? selectedTeacherId : (currentUser?.id ?? '');
@@ -113,6 +114,10 @@ export default function CalendarPage() {
   }, [lessons, duration, teacherId]);
 
   const handleLessonClick = useCallback((lesson: Lesson) => {
+    if (dragJustEnded.current) {
+      dragJustEnded.current = false;
+      return;
+    }
     const el = document.querySelector(`[data-lesson-id="${lesson.id}"]`);
     const rect = el?.getBoundingClientRect() ?? new DOMRect(200, 200, 160, 36);
     setLessonPopover({ lesson, anchorRect: rect });
@@ -136,6 +141,7 @@ export default function CalendarPage() {
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveDrag(null);
     setHoverSlot(null);
+    dragJustEnded.current = true;
     const { active, over } = event;
     if (!over) return;
 

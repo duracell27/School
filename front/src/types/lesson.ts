@@ -26,6 +26,16 @@ export interface LessonTeacher {
 
 export type Subject = 'MATH' | 'UKRAINIAN';
 
+export interface LessonNote {
+  id: string;
+  lessonId: string;
+  description: string;
+  imageData: string | null;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: { id: string; name: string };
+}
+
 export interface Lesson {
   id: string;
   child: LessonChild;
@@ -37,6 +47,7 @@ export interface Lesson {
   price: string;
   originalStartDate: string | null;
   originalEndDate: string | null;
+  note: { id: string } | null;
   paymentStatus?: PaymentStatus;
   createdAt: string;
   updatedAt: string;

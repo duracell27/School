@@ -9,6 +9,7 @@ import { LessonsModule } from './lessons/lessons.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PaymentsModule } from './payments/payments.module';
 import { CommissionsModule } from './commissions/commissions.module';
+import { LessonNotesModule } from './lesson-notes/lesson-notes.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CommissionsModule } from './commissions/commissions.module';
     DashboardModule,
     PaymentsModule,
     CommissionsModule,
+    LessonNotesModule,
   ],
 })
 export class AppModule {}

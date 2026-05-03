@@ -127,7 +127,7 @@ export class DashboardService {
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
-    const [conducted, planned, prevConducted, payouts] = await Promise.all([
+    const [conducted, planned, prevConducted, payouts, cancelled] = await Promise.all([
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
@@ -147,6 +147,10 @@ export class DashboardService {
             _sum: { amount: true },
           })
         : Promise.resolve({ _sum: { amount: null } }),
+      this.prisma.lesson.aggregate({
+        where: { ...teacherFilter, status: 'CANCELLED', startDate: { gte: start, lt: end } },
+        _count: { id: true },
+      }),
     ]);
 
     const earned = Number(conducted._sum.price ?? 0);
@@ -162,6 +166,7 @@ export class DashboardService {
       expected,
       earnedDelta,
       conductedCount: conducted._count.id,
+      cancelledCount: cancelled._count.id,
       payoutsTotal,
       netProfit: Math.round((earned - payoutsTotal) * 100) / 100,
     };

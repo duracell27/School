@@ -51,6 +51,7 @@ model User {
   teacherPayoutsReceived TeacherPayout[]      @relation("TeacherPayoutReceiver")
   teacherPayoutsAdmined  TeacherPayout[]      @relation("TeacherPayoutAdmin")
   childSubjectsTeaching  ChildSubject[]       @relation("ChildSubjectTeacher")
+  lessonNotesCreated     LessonNote[]         @relation("LessonNoteCreator")
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 }
@@ -89,11 +90,24 @@ model Lesson {
   paymentLessons     PaymentLesson[]
   teacherEarnings    TeacherEarning[]
   schoolTransactions SchoolTransaction[]
+  note               LessonNote?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
   @@index([teacherId, startDate])
   @@index([childId])
+}
+
+model LessonNote {
+  id          String   @id @default(cuid())
+  lessonId    String   @unique
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  description String   @db.Text
+  imageData   String?  @db.Text
+  createdById String
+  createdBy   User     @relation("LessonNoteCreator", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model LessonPrice {

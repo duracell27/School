@@ -19,6 +19,7 @@ const lessonSelectBase = {
   price: true,
   originalStartDate: true,
   originalEndDate: true,
+  note: { select: { id: true } },
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.LessonSelect;
