@@ -10,6 +10,7 @@ import { LessonChart } from './_components/LessonChart';
 import { ChildrenByCountry } from './_components/ChildrenByCountry';
 import { TeachersTable } from './_components/TeachersTable';
 import { useDashboardSummary } from '@/lib/dashboard';
+import { formatCurrency } from '@/lib/format';
 import { useSessionStore } from '@/store/session.store';
 import type { Period } from '@/types/dashboard';
 
@@ -58,9 +59,13 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
     <>
       <SummaryCard
         title="Зароблено"
-        amount={data?.earned}
+        amount={data?.netProfit}
         delta={data?.earnedDelta}
         isLoading={isLoading}
+        subtitles={data ? [
+          { label: 'Загальна сума', value: formatCurrency(data.earned) },
+          { label: 'Виплачені комісії', value: formatCurrency(data.payoutsTotal) },
+        ] : undefined}
       />
       <SummaryCard
         title="Очікується"

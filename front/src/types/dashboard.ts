@@ -5,6 +5,8 @@ export interface DashboardSummary {
   expected: number;
   earnedDelta: number | null;
   conductedCount: number;
+  payoutsTotal: number;
+  netProfit: number;
 }
 
 export interface ChartPoint {

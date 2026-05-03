@@ -10,9 +10,10 @@ interface SummaryCardProps {
   count?: number | undefined;
   delta?: number | null;
   isLoading?: boolean;
+  subtitles?: { label: string; value: string }[];
 }
 
-export function SummaryCard({ title, amount, count, delta, isLoading }: SummaryCardProps) {
+export function SummaryCard({ title, amount, count, delta, isLoading, subtitles }: SummaryCardProps) {
   const isReady = !isLoading && (amount !== undefined || count !== undefined);
   return (
     <Card>
@@ -33,6 +34,15 @@ export function SummaryCard({ title, amount, count, delta, isLoading }: SummaryC
               }`}>
                 {delta > 0 ? <TrendingUp size={12} /> : delta < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
                 <span>{delta > 0 ? '+' : ''}{delta}% vs попередній період</span>
+              </div>
+            )}
+            {subtitles && subtitles.length > 0 && (
+              <div className="mt-1.5 space-y-0.5">
+                {subtitles.map((s) => (
+                  <p key={s.label} className="text-xs text-gray-400">
+                    {s.label}: <span className="font-medium text-gray-600">{s.value}</span>
+                  </p>
+                ))}
               </div>
             )}
           </>

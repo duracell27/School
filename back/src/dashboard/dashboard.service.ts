@@ -127,7 +127,7 @@ export class DashboardService {
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
-    const [conducted, planned, prevConducted] = await Promise.all([
+    const [conducted, planned, prevConducted, payouts] = await Promise.all([
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
@@ -141,16 +141,30 @@ export class DashboardService {
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: prevStart, lt: prevEnd } },
         _sum: { price: true },
       }),
+      userRole !== Role.TEACHER
+        ? this.prisma.teacherPayout.aggregate({
+            where: { createdAt: { gte: start, lt: end } },
+            _sum: { amount: true },
+          })
+        : Promise.resolve({ _sum: { amount: null } }),
     ]);
 
     const earned = Number(conducted._sum.price ?? 0);
     const expected = Number(planned._sum.price ?? 0);
     const prevEarned = Number(prevConducted._sum.price ?? 0);
+    const payoutsTotal = Number(payouts._sum.amount ?? 0);
     const earnedDelta = prevEarned === 0
       ? null
       : Math.round(((earned - prevEarned) / prevEarned) * 100);
 
-    return { earned, expected, earnedDelta, conductedCount: conducted._count.id };
+    return {
+      earned,
+      expected,
+      earnedDelta,
+      conductedCount: conducted._count.id,
+      payoutsTotal,
+      netProfit: Math.round((earned - payoutsTotal) * 100) / 100,
+    };
   }
 
   async getChart(userId: string, userRole: Role, period: Period, ref: Date = new Date()): Promise<ChartPoint[]> {
