@@ -92,6 +92,10 @@ function fmtDateTime(dt: string | null) {
   });
 }
 
+function fmtTime(dt: string) {
+  return new Date(dt).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+}
+
 type SortKey = 'child' | 'teacher' | 'status' | 'startDate' | 'paymentStatus';
 type SortDir = 'asc' | 'desc' | null;
 
@@ -173,8 +177,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 <SortBtn label="Оплата" col="paymentStatus" activeCol={sortKey} dir={sortDir} onToggle={handleSort} />
               </TableHead>
             )}
-            <TableHead><SortBtn label="Початок" col="startDate" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-            <TableHead>Кінець</TableHead>
+            <TableHead><SortBtn label="Час заняття" col="startDate" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
             <TableHead>Ціна</TableHead>
             <TableHead className="text-right">Дії</TableHead>
           </TableRow>
@@ -216,17 +219,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
               )}
               <TableCell>
                 <div className="flex flex-col gap-0.5">
-                  <span>{fmtDateTime(lesson.startDate)}</span>
-                  {lesson.status === 'RESCHEDULED' && lesson.originalStartDate && (
-                    <span className="text-xs text-gray-400 line-through">{fmtDateTime(lesson.originalStartDate)}</span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-0.5">
-                  <span>{fmtDateTime(lesson.endDate)}</span>
-                  {lesson.status === 'RESCHEDULED' && lesson.originalEndDate && (
-                    <span className="text-xs text-gray-400 line-through">{fmtDateTime(lesson.originalEndDate)}</span>
+                  <div>
+                    <div>{new Date(lesson.startDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                    <div className="text-xs text-gray-500">{fmtTime(lesson.startDate)} – {fmtTime(lesson.endDate)}</div>
+                  </div>
+                  {lesson.originalStartDate && (
+                    <div className="text-xs text-orange-500">
+                      <div>Було: {new Date(lesson.originalStartDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                      <div>{fmtTime(lesson.originalStartDate)}{lesson.originalEndDate ? ` – ${fmtTime(lesson.originalEndDate)}` : ''}</div>
+                    </div>
                   )}
                 </div>
               </TableCell>
@@ -248,7 +249,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           ))}
           {lessons.length === 0 && (
             <TableRow>
-              <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
+              <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
             </TableRow>
           )}
         </TableBody>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { LessonsTable } from '@/components/lessons/lessons-table';
 import { LessonModal } from '@/components/lessons/lesson-modal';
 import { DeleteDialog } from '@/components/lessons/delete-dialog';
@@ -16,7 +17,15 @@ type ModalState =
 type DeleteState = { open: false } | { open: true; lesson: Lesson };
 
 export default function LessonsPage() {
-  const { data: lessons = [], isLoading, error } = useLessons();
+  const [search, setSearch] = useState('');
+  const [date, setDate] = useState('');
+
+  const { data: lessons = [], isLoading, error } = useLessons({ date: date || undefined });
+
+  const filtered = search.trim()
+    ? lessons.filter((l) => l.child.name.toLowerCase().includes(search.trim().toLowerCase()))
+    : lessons;
+
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false });
 
@@ -28,13 +37,40 @@ export default function LessonsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">
           Уроки{' '}
-          <span className="text-sm font-normal text-gray-400">({lessons.length})</span>
+          <span className="text-sm font-normal text-gray-400">({filtered.length})</span>
         </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>+ Додати урок</Button>
       </div>
+
+      <div className="flex items-center gap-3 flex-wrap">
+        <Input
+          placeholder="Пошук по учню..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-56"
+        />
+        <div className="flex items-center gap-2">
+          <div className="relative" lang="uk-UA">
+            <label className="absolute -top-2 left-2 text-[10px] text-gray-400 bg-white px-0.5 pointer-events-none">
+              Дата заняття
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              lang="uk-UA"
+              className="flex h-9 w-44 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+          {date && (
+            <Button variant="outline" size="sm" onClick={() => setDate('')}>✕</Button>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg border">
         <LessonsTable
-          lessons={lessons}
+          lessons={filtered}
           onEdit={(lesson) => setModal({ open: true, mode: 'edit', lesson })}
           onDelete={(lesson) => setDeleteState({ open: true, lesson })}
         />

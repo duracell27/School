@@ -23,13 +23,14 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (noteModal) return;
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onClose();
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
+  }, [onClose, noteModal]);
 
   const spaceBelow = window.innerHeight - anchorRect.bottom;
   const showAbove = spaceBelow < POPOVER_HEIGHT;

@@ -164,7 +164,11 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
               <Label>Предмет (необов&apos;язково)</Label>
               <Select value={subject || '__none__'} onValueChange={(v) => setSubject(v === '__none__' ? '' : v as Subject)} disabled={isEdit}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Не вказано" />
+                  <SelectValue placeholder="Не вказано">
+                    {subject
+                      ? `${SUBJECTS.find(m => m.value === subject)?.emoji ?? ''} ${SUBJECTS.find(m => m.value === subject)?.label ?? subject}`
+                      : '— Не вказано —'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">— Не вказано —</SelectItem>

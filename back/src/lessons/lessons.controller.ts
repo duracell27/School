@@ -8,6 +8,7 @@ import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
+import { CopyWeekDto } from './dto/copy-week.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -56,6 +57,12 @@ export class LessonsController {
   create(@Body() dto: CreateLessonDto, @Req() req: Request) {
     const user = req['user'] as JwtUser;
     return this.lessons.create(dto, user.sub, user.role);
+  }
+
+  @Post('copy-from-prev-week')
+  copyFromPrevWeek(@Body() dto: CopyWeekDto, @Req() req: Request) {
+    const user = req['user'] as JwtUser;
+    return this.lessons.copyFromPrevWeek(user.sub, user.role, dto);
   }
 
   @Get(':id')

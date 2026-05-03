@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Copy } from 'lucide-react';
 import { WeekCalendar, getWeekStart } from '@/components/dashboard/week-calendar';
 import { ChildrenSidebar } from '@/components/dashboard/children-sidebar';
 import { LessonActionsPopover } from '@/components/dashboard/lesson-actions-popover';
 import { LessonModal } from '@/components/lessons/lesson-modal';
-import { useLessons, useUpdateLesson } from '@/lib/lessons';
+import { useLessons, useUpdateLesson, useCopyFromPrevWeek } from '@/lib/lessons';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { useSessionStore } from '@/store/session.store';
@@ -93,6 +93,10 @@ export default function CalendarPage() {
   );
 
   const updateLesson = useUpdateLesson();
+  const copyFromPrevWeek = useCopyFromPrevWeek();
+
+  const realWeekStart = getWeekStart(new Date());
+  const isFutureWeek = weekStart.getTime() > realWeekStart.getTime();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -221,6 +225,30 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
+
+      {isFutureWeek && (
+        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <Copy size={16} className="text-blue-500 shrink-0" />
+          <p className="text-sm text-blue-700 flex-1">
+            Запланувати заняття з минулого тижня з оригінальним розкладом
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-blue-300 text-blue-700 hover:bg-blue-100"
+            disabled={copyFromPrevWeek.isPending}
+            onClick={async () => {
+              const result = await copyFromPrevWeek.mutateAsync({
+                targetWeekStart: toWeekStartStr(weekStart),
+                teacherId: isAdmin ? (teacherId || undefined) : undefined,
+              });
+              alert(`Створено ${result.created} занять`);
+            }}
+          >
+            {copyFromPrevWeek.isPending ? 'Створення...' : 'Запланувати'}
+          </Button>
+        </div>
+      )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="flex gap-3 items-start">

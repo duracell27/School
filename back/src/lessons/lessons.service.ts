@@ -7,6 +7,7 @@ import { PaymentsService, computeAllocation } from '../payments/payments.service
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { LessonQueryDto } from './dto/lesson-query.dto';
+import { CopyWeekDto } from './dto/copy-week.dto';
 
 const lessonSelectBase = {
   id: true,
@@ -54,7 +55,7 @@ export class LessonsService {
   ) {}
 
   findAll(userId: string, userRole: Role, query: LessonQueryDto) {
-    const { teacherId, weekStart } = query;
+    const { teacherId, weekStart, date } = query;
     const where: Prisma.LessonWhereInput = {};
 
     if (userRole === Role.TEACHER) {
@@ -67,6 +68,12 @@ export class LessonsService {
       const start = new Date(weekStart);
       const end = new Date(start);
       end.setDate(end.getDate() + 7);
+      where.startDate = { gte: start, lt: end };
+    } else if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(start);
+      end.setDate(end.getDate() + 1);
       where.startDate = { gte: start, lt: end };
     }
 
@@ -301,6 +308,63 @@ export class LessonsService {
     });
     await this.payments.reallocate(lesson.child.id, lesson.teacher.id);
     return updated;
+  }
+
+  async copyFromPrevWeek(userId: string, userRole: Role, dto: CopyWeekDto) {
+    const target = new Date(dto.targetWeekStart);
+    target.setHours(0, 0, 0, 0);
+    const sourceStart = new Date(target);
+    sourceStart.setDate(sourceStart.getDate() - 7);
+    const sourceEnd = new Date(target);
+
+    const where: Prisma.LessonWhereInput = {
+      startDate: { gte: sourceStart, lt: sourceEnd },
+      status: { not: 'CANCELLED' },
+    };
+
+    if (userRole === Role.TEACHER) {
+      where.teacherId = userId;
+    } else if (dto.teacherId) {
+      where.teacherId = dto.teacherId;
+    }
+
+    const sourceLessons = await this.prisma.lesson.findMany({
+      where,
+      select: {
+        childId: true, teacherId: true, price: true, subject: true,
+        startDate: true, endDate: true,
+        originalStartDate: true, originalEndDate: true,
+      },
+    });
+
+    const newLessons = sourceLessons.map((lesson) => {
+      const baseStart = new Date(lesson.originalStartDate ?? lesson.startDate);
+      const baseEnd = new Date(lesson.originalEndDate ?? lesson.endDate);
+      const durationMs = baseEnd.getTime() - baseStart.getTime();
+
+      // preserve day-of-week and time, shift to target week
+      const day = baseStart.getDay();
+      const dayFromMonday = day === 0 ? 6 : day - 1;
+      const newStart = new Date(target);
+      newStart.setDate(target.getDate() + dayFromMonday);
+      newStart.setHours(baseStart.getHours(), baseStart.getMinutes(), 0, 0);
+      const newEnd = new Date(newStart.getTime() + durationMs);
+
+      return {
+        childId: lesson.childId,
+        teacherId: lesson.teacherId,
+        price: lesson.price,
+        subject: lesson.subject,
+        status: 'PLANNED' as const,
+        startDate: newStart,
+        endDate: newEnd,
+      };
+    });
+
+    if (newLessons.length === 0) return { created: 0 };
+
+    await this.prisma.lesson.createMany({ data: newLessons });
+    return { created: newLessons.length };
   }
 
   async remove(id: string, userId: string, userRole: Role): Promise<void> {

@@ -6,10 +6,11 @@ import type {
   CreateLessonPricePayload, UpdateLessonPricePayload,
 } from '@/types/lesson';
 
-export function useLessons(filters: { teacherId?: string; weekStart?: string } = {}) {
+export function useLessons(filters: { teacherId?: string; weekStart?: string; date?: string } = {}) {
   const params = new URLSearchParams();
   if (filters.teacherId) params.set('teacherId', filters.teacherId);
   if (filters.weekStart) params.set('weekStart', filters.weekStart);
+  if (filters.date) params.set('date', filters.date);
   const qs = params.toString();
   return useQuery({
     queryKey: ['lessons', filters],
@@ -53,6 +54,20 @@ export function useDeleteLesson() {
       queryClient.invalidateQueries({ queryKey: ['lessons'] });
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['child-balances'] });
+    },
+  });
+}
+
+export function useCopyFromPrevWeek() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { targetWeekStart: string; teacherId?: string }) =>
+      apiFetch<{ created: number }>('/lessons/copy-from-prev-week', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
     },
   });
 }
