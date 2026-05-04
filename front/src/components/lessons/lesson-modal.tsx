@@ -129,11 +129,12 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
   // Auto-fill teacher when child changes (admin only, not editing)
   useEffect(() => {
     if (!isAdmin || isEdit || !childId) return;
+    if (defaultTeacherId) { setSubject(''); return; }
     const uniqueTeachers = [...new Set((selectedChild?.subjects ?? []).map((s) => s.teacher.id))];
     if (uniqueTeachers.length === 1) setTeacherId(uniqueTeachers[0]);
     else setTeacherId('');
     setSubject('');
-  }, [childId]);
+  }, [childId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill subject when only one available for the (child, teacher) pair
   useEffect(() => {

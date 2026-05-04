@@ -39,6 +39,7 @@ export function ChildSubjectsModal({ open, onClose, child }: Props) {
       await addSubject.mutateAsync({ childId: child.id, teacherId, subject: subject as Subject });
       setTeacherId('');
       setSubject('');
+      onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Помилка');
     }
@@ -89,7 +90,11 @@ export function ChildSubjectsModal({ open, onClose, child }: Props) {
               <Label>Предмет</Label>
               <Select value={subject} onValueChange={(v) => setSubject(v as Subject)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Оберіть предмет" />
+                  <SelectValue placeholder="Оберіть предмет">
+                    {subject
+                      ? `${SUBJECTS.find(m => m.value === subject)?.emoji ?? ''} ${SUBJECTS.find(m => m.value === subject)?.label ?? subject}`
+                      : <span className="text-muted-foreground">Оберіть предмет</span>}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {SUBJECTS.map((s) => (

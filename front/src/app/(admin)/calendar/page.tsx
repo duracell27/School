@@ -13,6 +13,7 @@ import { ChildrenSidebar } from '@/components/dashboard/children-sidebar';
 import { LessonActionsPopover } from '@/components/dashboard/lesson-actions-popover';
 import { LessonModal } from '@/components/lessons/lesson-modal';
 import { useLessons, useUpdateLesson, useCopyFromPrevWeek } from '@/lib/lessons';
+import { subjectEmoji, subjectLabel } from '@/lib/subjects';
 import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { useSessionStore } from '@/store/session.store';
@@ -82,6 +83,8 @@ export default function CalendarPage() {
 
   const { data: users = [] } = useUsers();
   const teacherId = isAdmin ? selectedTeacherId : (currentUser?.id ?? '');
+  const teacherIdRef = useRef(teacherId);
+  teacherIdRef.current = teacherId;
 
   const { data: lessons = [], isLoading } = useLessons({
     teacherId: teacherId || undefined,
@@ -114,8 +117,8 @@ export default function CalendarPage() {
     if (isSlotOccupied(lessons, dayKey, hour, minute, duration)) return;
     const startDate = buildStartISO(dayKey, hour, minute);
     const endDate = new Date(new Date(startDate).getTime() + duration * 60000).toISOString();
-    setSlotModal({ startDate, endDate, teacherId });
-  }, [lessons, duration, teacherId]);
+    setSlotModal({ startDate, endDate, teacherId: teacherIdRef.current });
+  }, [lessons, duration]);
 
   const handleLessonClick = useCallback((lesson: Lesson) => {
     if (dragJustEnded.current) {
@@ -160,11 +163,12 @@ export default function CalendarPage() {
 
     if (activeData.type === 'child' && activeData.child) {
       const child = activeData.child;
-      if (!teacherId) return;
+      const currentTeacherId = teacherIdRef.current;
+      if (!currentTeacherId) return;
       if (isSlotOccupied(lessons, dayKey, hour, minute, duration)) return;
       const startDate = buildStartISO(dayKey, hour, minute);
       const endDate = new Date(new Date(startDate).getTime() + duration * 60000).toISOString();
-      setSlotModal({ startDate, endDate, teacherId, defaultChildId: child.id });
+      setSlotModal({ startDate, endDate, teacherId: currentTeacherId, defaultChildId: child.id });
     }
 
     if (activeData.type === 'lesson' && activeData.lesson) {
@@ -187,7 +191,7 @@ export default function CalendarPage() {
         },
       });
     }
-  }, [lessons, duration, teacherId, updateLesson]);
+  }, [lessons, duration, updateLesson]);
 
   return (
     <div className="space-y-4">
@@ -277,24 +281,70 @@ export default function CalendarPage() {
         </div>
 
         <DragOverlay dropAnimation={null}>
-          {activeDrag?.type === 'child' && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded-lg shadow-lg text-sm font-medium opacity-90 w-44">
-              <ChildAvatar name={activeDrag.child.name} avatar={activeDrag.child.avatar} size={24} />
-              <div className="flex flex-col min-w-0">
-                <span className="truncate leading-tight">{activeDrag.child.name}</span>
-                {hoverSlot && (
-                  <span className="text-xs text-blue-500 leading-tight">
-                    {String(hoverSlot.hour).padStart(2, '0')}:{String(hoverSlot.minute).padStart(2, '0')}–
-                    {(() => {
-                      const end = new Date(0);
-                      end.setHours(hoverSlot.hour, hoverSlot.minute + duration, 0, 0);
-                      return `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`;
-                    })()}
-                  </span>
-                )}
+          {activeDrag?.type === 'child' && (() => {
+            const child = activeDrag.child;
+            const childSubjects = child.subjects.filter((s) => s.teacher.id === teacherId);
+            const fmtSlotTime = (h: number, m: number) =>
+              `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+            // child.timezone may be IANA string or numeric offset like "-9", "5.5"
+            const toChildTz = (h: number, m: number): string => {
+              const d = new Date();
+              d.setHours(h, m, 0, 0);
+              const tz = child.timezone;
+              const numeric = parseFloat(tz);
+              if (!isNaN(numeric) && String(numeric) === tz.trim()) {
+                // numeric UTC offset
+                const utcMs = d.getTime() + d.getTimezoneOffset() * 60000;
+                const childDate = new Date(utcMs + numeric * 3600000);
+                return fmtSlotTime(childDate.getHours(), childDate.getMinutes());
+              }
+              try {
+                return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', timeZone: tz });
+              } catch {
+                return '';
+              }
+            };
+
+            const localOffsetH = -new Date().getTimezoneOffset() / 60;
+            const childTzDiffers = (() => {
+              const tz = child.timezone;
+              const numeric = parseFloat(tz);
+              if (!isNaN(numeric) && String(numeric) === tz.trim()) return numeric !== localOffsetH;
+              return tz !== Intl.DateTimeFormat().resolvedOptions().timeZone;
+            })();
+
+            const endH = hoverSlot ? Math.floor((hoverSlot.hour * 60 + hoverSlot.minute + duration) / 60) : 0;
+            const endM = hoverSlot ? (hoverSlot.minute + duration) % 60 : 0;
+
+            return (
+              <div className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 rounded-lg shadow-lg text-sm font-medium opacity-90 w-48">
+                <ChildAvatar name={child.name} avatar={child.avatar} size={24} />
+                <div className="flex flex-col min-w-0">
+                  <span className="truncate leading-tight">{child.name}</span>
+                  {hoverSlot && (
+                    <>
+                      <span className="text-xs text-blue-500 leading-tight">
+                        {fmtSlotTime(hoverSlot.hour, hoverSlot.minute)}–{fmtSlotTime(endH, endM)}
+                      </span>
+                      {childTzDiffers && (
+                        <span className="text-xs text-orange-500 leading-tight">
+                          🌍 {toChildTz(hoverSlot.hour, hoverSlot.minute)}–{toChildTz(endH, endM)}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {childSubjects.length > 0 && (
+                    <span className="text-xs text-gray-500 leading-tight">
+                      {childSubjects.length === 1
+                        ? `${subjectEmoji(childSubjects[0].subject)} ${subjectLabel(childSubjects[0].subject)}`
+                        : childSubjects.map((s) => subjectEmoji(s.subject)).join(' або ')}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
           {activeDrag?.type === 'lesson' && (
             <div className="px-2 py-1 bg-blue-50 border-l-2 border-blue-400 rounded text-xs font-semibold text-blue-900 shadow-lg w-32 opacity-90">
               <div>{activeDrag.lesson.child.name}</div>

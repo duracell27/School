@@ -61,7 +61,7 @@ export default function ChildrenPage() {
 
       <ChildSubjectsModal
         open={subjectsState.open}
-        child={subjectsState.open ? subjectsState.child : null}
+        child={subjectsState.open ? (children.find((c) => c.id === subjectsState.child.id) ?? subjectsState.child) : null}
         onClose={() => setSubjectsState({ open: false })}
       />
     </div>
