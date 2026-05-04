@@ -316,10 +316,11 @@ export class LessonsService {
     const sourceStart = new Date(target);
     sourceStart.setDate(sourceStart.getDate() - 7);
     const sourceEnd = new Date(target);
+    const targetEnd = new Date(target);
+    targetEnd.setDate(targetEnd.getDate() + 7);
 
     const where: Prisma.LessonWhereInput = {
       startDate: { gte: sourceStart, lt: sourceEnd },
-      status: { not: 'CANCELLED' },
     };
 
     if (userRole === Role.TEACHER) {
@@ -337,12 +338,11 @@ export class LessonsService {
       },
     });
 
-    const newLessons = sourceLessons.map((lesson) => {
+    const candidates = sourceLessons.map((lesson) => {
       const baseStart = new Date(lesson.originalStartDate ?? lesson.startDate);
       const baseEnd = new Date(lesson.originalEndDate ?? lesson.endDate);
       const durationMs = baseEnd.getTime() - baseStart.getTime();
 
-      // preserve day-of-week and time, shift to target week
       const day = baseStart.getDay();
       const dayFromMonday = day === 0 ? 6 : day - 1;
       const newStart = new Date(target);
@@ -360,6 +360,22 @@ export class LessonsService {
         endDate: newEnd,
       };
     });
+
+    if (candidates.length === 0) return { created: 0 };
+
+    // fetch existing lessons in the target week to skip duplicates
+    const existing = await this.prisma.lesson.findMany({
+      where: { startDate: { gte: target, lt: targetEnd } },
+      select: { childId: true, teacherId: true, startDate: true },
+    });
+
+    const existingKeys = new Set(
+      existing.map((l) => `${l.childId}|${l.teacherId}|${l.startDate.getTime()}`),
+    );
+
+    const newLessons = candidates.filter(
+      (l) => !existingKeys.has(`${l.childId}|${l.teacherId}|${l.startDate.getTime()}`),
+    );
 
     if (newLessons.length === 0) return { created: 0 };
 

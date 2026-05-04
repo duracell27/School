@@ -69,11 +69,6 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
         ] : undefined}
       />
       <SummaryCard
-        title="Очікується"
-        amount={data?.expected}
-        isLoading={isLoading}
-      />
-      <SummaryCard
         title="Проведено уроків"
         count={data?.conductedCount}
         isLoading={isLoading}
@@ -115,7 +110,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top row: metric cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <NextLessonCard />
         <SummaryCards period={period} date={dateParam} />
         <ActiveChildrenCard />

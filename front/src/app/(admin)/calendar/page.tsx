@@ -194,6 +194,24 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-xl font-semibold">Календар</h2>
         <div className="flex items-center gap-2">
+          {isFutureWeek && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              disabled={copyFromPrevWeek.isPending}
+              onClick={async () => {
+                const result = await copyFromPrevWeek.mutateAsync({
+                  targetWeekStart: toWeekStartStr(weekStart),
+                  teacherId: isAdmin ? (teacherId || undefined) : undefined,
+                });
+                alert(`Створено ${result.created} занять`);
+              }}
+            >
+              <Copy size={14} className="mr-1.5" />
+              {copyFromPrevWeek.isPending ? 'Створення...' : 'Запланувати з минулого тижня'}
+            </Button>
+          )}
           {isAdmin && (
             <Select value={selectedTeacherId} onValueChange={(v) => setSelectedTeacherId(v ?? '')}>
               <SelectTrigger className="w-48">
@@ -225,30 +243,6 @@ export default function CalendarPage() {
           </div>
         </div>
       </div>
-
-      {isFutureWeek && (
-        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <Copy size={16} className="text-blue-500 shrink-0" />
-          <p className="text-sm text-blue-700 flex-1">
-            Запланувати заняття з минулого тижня з оригінальним розкладом
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-blue-300 text-blue-700 hover:bg-blue-100"
-            disabled={copyFromPrevWeek.isPending}
-            onClick={async () => {
-              const result = await copyFromPrevWeek.mutateAsync({
-                targetWeekStart: toWeekStartStr(weekStart),
-                teacherId: isAdmin ? (teacherId || undefined) : undefined,
-              });
-              alert(`Створено ${result.created} занять`);
-            }}
-          >
-            {copyFromPrevWeek.isPending ? 'Створення...' : 'Запланувати'}
-          </Button>
-        </div>
-      )}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
         <div className="flex gap-3 items-start">

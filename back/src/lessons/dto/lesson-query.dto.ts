@@ -8,4 +8,8 @@ export class LessonQueryDto {
   @IsDateString()
   @IsOptional()
   weekStart?: string;
+
+  @IsDateString()
+  @IsOptional()
+  date?: string;
 }
