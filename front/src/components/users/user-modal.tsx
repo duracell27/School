@@ -200,7 +200,7 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
             {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Роль</Label>
               <Select value={watch('role')} onValueChange={(v) => setValue('role', v as 'ADMIN' | 'TEACHER' | 'ADMIN_TEACHER')}>
@@ -231,7 +231,7 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="hireDate">Дата прийому</Label>
               <Input id="hireDate" type="date" {...register('hireDate')} />

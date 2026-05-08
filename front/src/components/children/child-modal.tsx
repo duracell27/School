@@ -192,7 +192,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Країна</Label>
               <CountrySelect value={country} onChange={setCountry} />
@@ -239,7 +239,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="child-hireDate">Дата прийняття</Label>
               <Input id="child-hireDate" type="date" {...register('hireDate')} />

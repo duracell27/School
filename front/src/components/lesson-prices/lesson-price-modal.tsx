@@ -181,7 +181,7 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
               </Select>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="lp-price">Ціна (грн)</Label>
               <Input id="lp-price" type="number" min={1} step="0.01" {...register('price')} />
