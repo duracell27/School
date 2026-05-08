@@ -72,6 +72,7 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
         title="Проведено уроків"
         count={data?.conductedCount}
         isLoading={isLoading}
+        subtitles={data ? [{ label: 'Годин', value: `${data.conductedHours} год` }] : undefined}
       />
     </>
   );
@@ -120,12 +121,18 @@ export default function DashboardPage() {
 
       {/* Bottom row: chart (2/3) + country breakdown (1/3) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <LessonChart period={period} date={dateParam} />
+        <div className="md:col-span-2 overflow-x-auto">
+          <LessonChart period={period} date={dateParam} />
+        </div>
         <ChildrenByCountry />
       </div>
 
       {/* Admin-only teacher table */}
-      {isAdmin && <TeachersTable period={period} date={dateParam} />}
+      {isAdmin && (
+        <div className="overflow-x-auto">
+          <TeachersTable period={period} date={dateParam} />
+        </div>
+      )}
     </div>
   );
 }
