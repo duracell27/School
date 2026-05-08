@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { subjectEmoji } from '@/lib/subjects';
 import type { Lesson, LessonStatus } from '@/types/lesson';
@@ -12,6 +12,7 @@ const HOUR_END = 22;
 const ROW_PX = 44;
 const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 const TOTAL_H = (HOUR_END - HOUR_START) * ROW_PX;
+const EXPANDED_HEIGHT = Math.round((55 / 60) * ROW_PX);
 
 const STATUS_STYLE: Record<LessonStatus, string> = {
   PLANNED: 'border-blue-400 bg-blue-50 text-blue-900',
@@ -20,12 +21,6 @@ const STATUS_STYLE: Record<LessonStatus, string> = {
   RESCHEDULED: 'border-orange-400 bg-orange-50 text-orange-900',
 };
 
-const STATUS_LABEL: Record<LessonStatus, string> = {
-  PLANNED: 'Заплановано',
-  CONDUCTED: 'Проведено',
-  CANCELLED: 'Скасовано',
-  RESCHEDULED: 'Перенесено',
-};
 
 export function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -77,7 +72,7 @@ function getChildLocalTime(lesson: Lesson): string | null {
   });
 }
 
-function countryFlag(code: string): string {
+export function countryFlag(code: string): string {
   return [...code.toUpperCase()]
     .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
     .join('');
@@ -118,7 +113,7 @@ function DroppableSlot({ id, hour, minute, occupied }: DroppableSlotProps) {
     <div
       ref={setNodeRef}
       className={`absolute left-0 right-0 z-0 transition-colors ${
-        isOver ? (occupied ? 'bg-red-100' : 'bg-green-100') : ''
+        isOver ? (occupied ? 'bg-red-100' : 'bg-sky-100') : ''
       }`}
       style={{ top, height: ROW_PX / 2 }}
     />
@@ -133,6 +128,7 @@ interface DraggableLessonCardProps {
 
 function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCardProps) {
   const draggable = lesson.status !== 'CONDUCTED';
+  const [isHovered, setIsHovered] = useState(false);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lesson-${lesson.id}`,
@@ -147,14 +143,19 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
   const endStr = new Date(lesson.endDate).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
   const childTime = getChildLocalTime(lesson);
 
+  const isShort = pos.height < EXPANDED_HEIGHT;
+  const displayHeight = isHovered && isShort ? EXPANDED_HEIGHT - 2 : pos.height - 2;
+
   const style: React.CSSProperties = {
     position: 'absolute',
     top: pos.top + 1,
-    height: pos.height - 2,
+    height: displayHeight,
     left: 2,
     right: 2,
-    zIndex: isDragging ? 0 : 10,
+    zIndex: isDragging ? 0 : (isHovered && isShort ? 50 : 10),
     opacity: isDragging ? 0.3 : 1,
+    overflow: 'hidden',
+    transition: 'height 0.15s ease, z-index 0s',
     ...(transform ? { transform: CSS.Translate.toString(transform) } : {}),
   };
 
@@ -163,36 +164,26 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
       ref={setNodeRef}
       data-lesson-id={lesson.id}
       style={style}
-      className={`group rounded border-l-2 px-1 py-0.5 overflow-hidden ${draggable ? 'cursor-grab' : 'cursor-pointer'} ${cardStyle}`}
+      className={`rounded border-l-2 px-1 py-0.5 ${draggable ? 'cursor-grab' : 'cursor-pointer'} ${cardStyle}`}
       onClick={(e) => { e.stopPropagation(); onLessonClick?.(lesson); }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       {...listeners}
       {...attributes}
     >
-      {/* Hover tooltip */}
-      <div className="absolute bottom-full left-0 z-50 hidden group-hover:block bg-white border border-gray-200 rounded shadow-lg p-2 text-xs w-44 pointer-events-none">
-        <p className="font-semibold">{lesson.child.name}</p>
-        {lesson.subject && <p className="text-gray-500">{subjectEmoji(lesson.subject)} {lesson.subject === 'MATH' ? 'Математика' : 'Українська'}</p>}
-        <p className="text-gray-500">{startStr}–{endStr}</p>
-        <p className="text-gray-500">{lesson.price}₴</p>
-        <p className="text-gray-500">{STATUS_LABEL[lesson.status]}</p>
-        {overdue && <p className="text-red-600 font-medium">Не оброблено!</p>}
-      </div>
-
       <div className="flex items-center gap-1 min-w-0">
         <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
         <span className="text-[11px] font-semibold truncate leading-tight">{lesson.child.name}</span>
       </div>
 
-      {pos.height >= 20 && (
-        <div className="text-[10px] opacity-70 leading-tight truncate">
-          {startStr}–{endStr}
-          {childTime && (
-            <span className="ml-1 opacity-80">
-              · {countryFlag(lesson.child.country)} {childTime}
-            </span>
-          )}
-        </div>
-      )}
+      <div className="text-[10px] opacity-70 leading-tight truncate">
+        {startStr}–{endStr}
+        {childTime && (
+          <span className="ml-1 opacity-80">
+            · {countryFlag(lesson.child.country)} {childTime}
+          </span>
+        )}
+      </div>
 
       {lesson.subject && (
         <div className="text-[9px] leading-none truncate opacity-80">

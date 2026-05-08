@@ -8,7 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Copy } from 'lucide-react';
-import { WeekCalendar, getWeekStart } from '@/components/dashboard/week-calendar';
+import { WeekCalendar, getWeekStart, countryFlag } from '@/components/dashboard/week-calendar';
 import { ChildrenSidebar } from '@/components/dashboard/children-sidebar';
 import { LessonActionsPopover } from '@/components/dashboard/lesson-actions-popover';
 import { LessonModal } from '@/components/lessons/lesson-modal';
@@ -179,6 +179,7 @@ export default function CalendarPage() {
       const originalEnd = lesson.endDate;
       const durationMs = new Date(originalEnd).getTime() - new Date(originalStart).getTime();
       const newStart = buildStartISO(dayKey, hour, minute);
+      if (new Date(newStart).getTime() === new Date(originalStart).getTime()) return;
       const newEnd = new Date(new Date(newStart).getTime() + durationMs).toISOString();
       await updateLesson.mutateAsync({
         id: lesson.id,
@@ -329,7 +330,7 @@ export default function CalendarPage() {
                       </span>
                       {childTzDiffers && (
                         <span className="text-xs text-orange-500 leading-tight">
-                          🌍 {toChildTz(hoverSlot.hour, hoverSlot.minute)}–{toChildTz(endH, endM)}
+                          {countryFlag(child.country)} {toChildTz(hoverSlot.hour, hoverSlot.minute)}–{toChildTz(endH, endM)}
                         </span>
                       )}
                     </>
@@ -345,16 +346,53 @@ export default function CalendarPage() {
               </div>
             );
           })()}
-          {activeDrag?.type === 'lesson' && (
-            <div className="px-2 py-1 bg-blue-50 border-l-2 border-blue-400 rounded text-xs font-semibold text-blue-900 shadow-lg w-32 opacity-90">
-              <div>{activeDrag.lesson.child.name}</div>
-              {hoverSlot && (
-                <div className="text-blue-500 font-normal">
-                  {String(hoverSlot.hour).padStart(2, '0')}:{String(hoverSlot.minute).padStart(2, '0')}
-                </div>
-              )}
-            </div>
-          )}
+          {activeDrag?.type === 'lesson' && (() => {
+            const lesson = activeDrag.lesson;
+            const child = lesson.child;
+            const lessonDurationMin = Math.round(
+              (new Date(lesson.endDate).getTime() - new Date(lesson.startDate).getTime()) / 60000
+            );
+            const fmtT = (h: number, m: number) =>
+              `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            const toChildTz = (h: number, m: number): string => {
+              const d = new Date(); d.setHours(h, m, 0, 0);
+              const tz = child.timezone;
+              const numeric = parseFloat(tz);
+              if (!isNaN(numeric) && String(numeric) === tz.trim()) {
+                const childDate = new Date(d.getTime() + d.getTimezoneOffset() * 60000 + numeric * 3600000);
+                return fmtT(childDate.getHours(), childDate.getMinutes());
+              }
+              try { return d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', timeZone: tz }); }
+              catch { return ''; }
+            };
+            const localOffsetH = -new Date().getTimezoneOffset() / 60;
+            const childTzDiffers = (() => {
+              const tz = child.timezone;
+              const numeric = parseFloat(tz);
+              if (!isNaN(numeric) && String(numeric) === tz.trim()) return numeric !== localOffsetH;
+              return tz !== Intl.DateTimeFormat().resolvedOptions().timeZone;
+            })();
+            const endTotal = hoverSlot ? hoverSlot.hour * 60 + hoverSlot.minute + lessonDurationMin : 0;
+            const endH = Math.floor(endTotal / 60);
+            const endM = endTotal % 60;
+            return (
+              <div className="px-2 py-1 bg-blue-50 border-l-2 border-blue-400 rounded text-xs font-semibold text-blue-900 shadow-lg w-36 opacity-90">
+                <div>{child.name}</div>
+                {hoverSlot && (
+                  <>
+                    <div className="text-blue-500 font-normal">
+                      {fmtT(hoverSlot.hour, hoverSlot.minute)}–{fmtT(endH, endM)}
+                    </div>
+                    {childTzDiffers && (
+                      <div className="text-orange-500 font-normal">
+                        {countryFlag(child.country)} {toChildTz(hoverSlot.hour, hoverSlot.minute)}–{toChildTz(endH, endM)}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </DragOverlay>
       </DndContext>
 
