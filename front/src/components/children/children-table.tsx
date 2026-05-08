@@ -141,127 +141,172 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
   const sorted = sortKey ? sortChildren(children, sortKey, sortDir) : children;
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>
-            <SortButton label="Ім'я" colKey="name" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
-          </TableHead>
-          <TableHead>
-            <SortButton label="Вік" colKey="age" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
-          </TableHead>
-          <TableHead>
-            <SortButton label="Країна" colKey="country" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
-          </TableHead>
-          <TableHead>Таймзона</TableHead>
-          <TableHead>
-            <SortButton label="Вчителі" colKey="teacher" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
-          </TableHead>
-          <TableHead>Батьки</TableHead>
-          <TableHead>
-            <SortButton label="Дата" colKey="hireDate" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
-          </TableHead>
-          <TableHead className="text-right">Дії</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
+    <>
+      <div className="md:hidden divide-y">
         {sorted.map((child) => {
-          const country = getCountry(child.country);
-          const tzInfo = getTimezoneInfo(child.timezone);
+          const flag = getCountry(child.country)?.flag ?? child.country;
+          const teacherNames = [...new Set(child.subjects.map(s => s.teacher.name))];
           return (
-            <TableRow key={child.id}>
-              <TableCell>
-                <div className="flex items-center gap-2.5">
-                  <ChildAvatar name={child.name} avatar={child.avatar} size={32} />
-                  <span className="font-medium">{child.name}</span>
-                </div>
-              </TableCell>
-              <TableCell>{child.age}</TableCell>
-              <TableCell>
-                <span title={country?.name ?? child.country}>
-                  {country?.flag ?? child.country}
-                </span>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-0.5">
-                  <span>{child.timezone}</span>
-                  <span className="text-xs text-gray-500">
-                    {tzInfo.time}
-                    {tzInfo.date && (
-                      <span className="ml-1 text-orange-500">{tzInfo.date}</span>
-                    )}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  {child.subjects.length === 0 ? (
-                    <span className="text-gray-400 text-sm">—</span>
-                  ) : (
-                    child.subjects.map((s) => (
-                      <span key={s.id} className="inline-flex items-center gap-1 text-xs text-gray-600">
-                        {subjectEmoji(s.subject)} {subjectLabel(s.subject)}
-                        <span className="text-gray-400">• {s.teacher.name}</span>
-                      </span>
-                    ))
+            <div key={child.id} className="px-4 py-3 flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2 min-w-0">
+                <ChildAvatar name={child.name} avatar={child.avatar} size={36} />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-medium leading-tight">{child.name}</span>
+                    <span>{flag}</span>
+                  </div>
+                  {child.subjects.length > 0 && (
+                    <p className="text-xs text-gray-500 leading-tight">
+                      {child.subjects.map(s => `${subjectEmoji(s.subject)} ${subjectLabel(s.subject)}`).join(', ')}
+                    </p>
+                  )}
+                  {teacherNames.length > 0 && (
+                    <p className="text-xs text-gray-400 leading-tight">{teacherNames.join(', ')}</p>
                   )}
                 </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-0.5 text-xs text-gray-600">
-                  {child.parentContacts.length === 0 ? (
-                    <span className="text-gray-400">—</span>
-                  ) : (
-                    child.parentContacts.map((c, i) => (
-                      <span key={i}>
-                        {c.label}:{' '}
-                        <a
-                          href={toTelegramHref(c.phone)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
-                        >
-                          {c.phone}
-                        </a>
-                      </span>
-                    ))
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1 text-sm">
-                  <span className="flex items-center gap-1.5 text-green-600">
-                    <UserPlus size={13} />
-                    {formatDate(child.hireDate)}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-red-500">
-                    <UserMinus size={13} />
-                    {formatDate(child.graduationDate)}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right space-x-2">
-                <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
-                  <BookOpen size={14} />
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onManageSubjects(child)}>
+                  <BookOpen size={12} />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => onEdit(child)}>
-                  Редагувати
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(child)}>
+                  Ред.
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => onDelete(child)}>
-                  Видалити
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(child)}>
+                  Вид.
                 </Button>
-              </TableCell>
-            </TableRow>
+              </div>
+            </div>
           );
         })}
-        {children.length === 0 && (
-          <TableRow>
-            <TableCell colSpan={8} className="text-center text-gray-400 py-8">
-              Дітей не знайдено
-            </TableCell>
-          </TableRow>
+        {sorted.length === 0 && (
+          <p className="px-4 py-6 text-sm text-gray-400 text-center">Дітей не знайдено</p>
         )}
-      </TableBody>
-    </Table>
+      </div>
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>
+                <SortButton label="Ім'я" colKey="name" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
+              <TableHead>
+                <SortButton label="Вік" colKey="age" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
+              <TableHead>
+                <SortButton label="Країна" colKey="country" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
+              <TableHead>Таймзона</TableHead>
+              <TableHead>
+                <SortButton label="Вчителі" colKey="teacher" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
+              <TableHead>Батьки</TableHead>
+              <TableHead>
+                <SortButton label="Дата" colKey="hireDate" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
+              <TableHead className="text-right">Дії</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((child) => {
+              const country = getCountry(child.country);
+              const tzInfo = getTimezoneInfo(child.timezone);
+              return (
+                <TableRow key={child.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <ChildAvatar name={child.name} avatar={child.avatar} size={32} />
+                      <span className="font-medium">{child.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{child.age}</TableCell>
+                  <TableCell>
+                    <span title={country?.name ?? child.country}>
+                      {country?.flag ?? child.country}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span>{child.timezone}</span>
+                      <span className="text-xs text-gray-500">
+                        {tzInfo.time}
+                        {tzInfo.date && (
+                          <span className="ml-1 text-orange-500">{tzInfo.date}</span>
+                        )}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      {child.subjects.length === 0 ? (
+                        <span className="text-gray-400 text-sm">—</span>
+                      ) : (
+                        child.subjects.map((s) => (
+                          <span key={s.id} className="inline-flex items-center gap-1 text-xs text-gray-600">
+                            {subjectEmoji(s.subject)} {subjectLabel(s.subject)}
+                            <span className="text-gray-400">• {s.teacher.name}</span>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5 text-xs text-gray-600">
+                      {child.parentContacts.length === 0 ? (
+                        <span className="text-gray-400">—</span>
+                      ) : (
+                        child.parentContacts.map((c, i) => (
+                          <span key={i}>
+                            {c.label}:{' '}
+                            <a
+                              href={toTelegramHref(c.phone)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {c.phone}
+                            </a>
+                          </span>
+                        ))
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 text-sm">
+                      <span className="flex items-center gap-1.5 text-muted-foreground">
+                        <UserPlus size={13} />
+                        {formatDate(child.hireDate)}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-red-500">
+                        <UserMinus size={13} />
+                        {formatDate(child.graduationDate)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
+                      <BookOpen size={14} />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => onEdit(child)}>
+                      Редагувати
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => onDelete(child)}>
+                      Видалити
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {children.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center text-gray-400 py-8">
+                  Дітей не знайдено
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </>
   );
 }
