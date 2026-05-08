@@ -145,6 +145,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
 
   async function onSubmit(data: FormValues) {
     if (!childId || !teacherId) { setSubmitError('Оберіть учня та вчителя'); return; }
+    if (availableSubjects.length > 1 && !subject) { setSubmitError('Оберіть предмет'); return; }
     try {
       const payload = {
         childId,
@@ -187,7 +188,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
           <DialogTitle>{isEdit ? 'Редагувати урок' : 'Додати урок'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label>Учень</Label>
               <ChildSelect children={children} value={childId} onChange={setChildId} />
@@ -285,7 +286,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
             <Label htmlFor="lesson-price">
               Ціна (грн)
               {suggestedPrice !== null && suggestedPrice !== undefined && (
-                <span className="ml-2 text-xs text-green-600">автозаповнено</span>
+                <span className="ml-2 text-xs text-muted-foreground">автозаповнено</span>
               )}
             </Label>
             <Input id="lesson-price" type="number" min={1} step="0.01" {...register('price')} />
