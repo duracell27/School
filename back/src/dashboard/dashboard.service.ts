@@ -127,11 +127,15 @@ export class DashboardService {
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
-    const [conducted, planned, prevConducted, payouts, cancelled] = await Promise.all([
+    const [conducted, conductedDurations, planned, prevConducted, payouts, cancelled] = await Promise.all([
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
         _count: { id: true },
+      }),
+      this.prisma.lesson.findMany({
+        where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
+        select: { startDate: true, endDate: true },
       }),
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'PLANNED', startDate: { gte: now, lt: end } },
@@ -160,12 +164,18 @@ export class DashboardService {
     const earnedDelta = prevEarned === 0
       ? null
       : Math.round(((earned - prevEarned) / prevEarned) * 100);
+    const conductedHours = Math.round(
+      conductedDurations.reduce((sum, l) =>
+        sum + (new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 3600000, 0
+      ) * 10
+    ) / 10;
 
     return {
       earned,
       expected,
       earnedDelta,
       conductedCount: conducted._count.id,
+      conductedHours,
       cancelledCount: cancelled._count.id,
       payoutsTotal,
       netProfit: Math.round((earned - payoutsTotal) * 100) / 100,
