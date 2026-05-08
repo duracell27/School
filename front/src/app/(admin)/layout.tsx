@@ -8,6 +8,7 @@ import { useSessionStore } from '@/store/session.store';
 import { useOverdueCount } from '@/lib/lessons';
 import { useSchoolAccount } from '@/lib/payments';
 import { formatCurrency } from '@/lib/format';
+import { MobileHeader } from '@/components/ui/mobile-header';
 import type { User } from '@/types/user';
 
 interface RefreshResponse {
@@ -101,15 +102,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen flex">
-      <aside className="w-56 shrink-0 bg-white border-r flex flex-col">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      <MobileHeader />
+      <aside className="w-56 shrink-0 bg-white border-r flex-col hidden md:flex">
         <div className="px-5 py-5 border-b">
           <span className="font-semibold text-sm">Teacher Platform</span>
           <SidebarSchoolBalance />
         </div>
-
         <NavContent />
-
         <div className="px-3 py-4 border-t">
           <button
             onClick={async () => {
@@ -122,8 +122,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
         </div>
       </aside>
-
-      <main className="flex-1 p-6 bg-gray-50">{children}</main>
+      <main className="flex-1 p-3 md:p-6 bg-gray-50">{children}</main>
     </div>
   );
 }
