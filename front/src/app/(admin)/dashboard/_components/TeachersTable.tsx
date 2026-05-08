@@ -45,7 +45,7 @@ export function TeachersTable({ period, date }: TeachersTableProps) {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums">{t.lessonsCount}</td>
-                  <td className="px-4 py-3 text-right tabular-nums font-medium text-green-700">
+                  <td className="px-4 py-3 text-right tabular-nums font-medium">
                     {formatCurrency(t.earned)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-blue-700">

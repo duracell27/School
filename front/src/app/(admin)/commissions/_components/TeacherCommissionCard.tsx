@@ -61,7 +61,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
       <div className="flex gap-6 text-sm flex-wrap">
         <div>
           <p className="text-xs text-gray-400">Офіційно нараховано</p>
-          <p className={`font-semibold ${balance.balance <= 0 ? 'text-green-600' : 'text-red-500'}`}>
+          <p className={`font-semibold ${balance.balance <= 0 ? 'text-foreground' : 'text-red-500'}`}>
             {formatCurrency(balance.balance)}
           </p>
           <p className="text-xs text-gray-400">{formatCurrency(balance.officialEarnings)} − {formatCurrency(balance.totalPayout)}</p>

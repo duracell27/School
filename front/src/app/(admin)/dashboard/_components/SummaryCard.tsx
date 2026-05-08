@@ -30,7 +30,7 @@ export function SummaryCard({ title, amount, count, delta, isLoading, subtitles 
             </p>
             {delta !== undefined && delta !== null && (
               <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${
-                delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'
+                delta > 0 ? 'text-sky-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'
               }`}>
                 {delta > 0 ? <TrendingUp size={12} /> : delta < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
                 <span>{delta > 0 ? '+' : ''}{delta}% vs попередній період</span>

@@ -62,7 +62,7 @@ export function NextLessonCard() {
               <p className="text-xs text-gray-500">
                 {formatDate(lesson.startDate)} · {formatTime(lesson.startDate)}
               </p>
-              <p className={`text-sm font-medium mt-0.5 ${isInProgress ? 'text-green-600' : 'text-blue-600'}`}>
+              <p className={`text-sm font-medium mt-0.5 ${isInProgress ? 'text-sky-600' : 'text-blue-600'}`}>
                 {isInProgress
                   ? `Зараз · залишилось ${formatCountdown(msUntilEnd)}`
                   : formatCountdown(msUntilStart)}

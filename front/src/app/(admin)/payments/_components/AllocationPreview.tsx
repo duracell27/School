@@ -45,10 +45,10 @@ export function AllocationPreview({
             <span key={`d${i}`} className="w-5 h-5 rounded-sm bg-red-400" title="Борг закрито" />
           ))}
           {Array.from({ length: prepaidLessons }).map((_, i) => (
-            <span key={`p${i}`} className="w-5 h-5 rounded-sm bg-green-400" title="Передоплата" />
+            <span key={`p${i}`} className="w-5 h-5 rounded-sm bg-sky-400" title="Передоплата" />
           ))}
           {Array.from({ length: virtualPrepaidLessons }).map((_, i) => (
-            <span key={`v${i}`} className="w-5 h-5 rounded-sm border-2 border-green-400 bg-green-100" title="Передоплата (без розкладу)" />
+            <span key={`v${i}`} className="w-5 h-5 rounded-sm border-2 border-sky-400 bg-sky-50" title="Передоплата (без розкладу)" />
           ))}
         </div>
       )}
@@ -57,11 +57,11 @@ export function AllocationPreview({
         {debtLessons > 0 && <p>Закрито боргу: {debtLessons} заняття</p>}
         {prepaidLessons > 0 && <p>Передоплачено: {prepaidLessons} заняття</p>}
         {virtualPrepaidLessons > 0 && (
-          <p className="text-green-700">
+          <p className="text-sky-700">
             Передоплата {virtualPrepaidLessons} занять (буде застосовано автоматично)
           </p>
         )}
-        {isExact && totalCubes > 0 && <p className="text-green-600 font-medium">Точне співпадіння ✓</p>}
+        {isExact && totalCubes > 0 && <p className="text-sky-700 font-medium">Точне співпадіння ✓</p>}
       </div>
 
       {hasLeftover && fractionalLeftover > 0 && (
@@ -82,7 +82,7 @@ export function AllocationPreview({
       )}
 
       {hasLeftover && virtualPrepaidLessons > 0 && fractionalLeftover === 0 && (
-        <p className="text-xs text-green-700">
+        <p className="text-xs text-sky-700">
           Кошти зарезервовано — застосуються до наступних занять автоматично ✓
         </p>
       )}

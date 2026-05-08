@@ -65,7 +65,7 @@ export function ChildBalanceWidget() {
                 </span>
               )}
               {isPrepaid && (
-                <span className="text-sm font-bold text-green-600">
+                <span className="text-sm font-bold text-sky-600">
                   +{prepaidCount} <span className="font-normal">переплачено</span>
                 </span>
               )}

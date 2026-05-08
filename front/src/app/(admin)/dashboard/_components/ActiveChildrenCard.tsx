@@ -18,7 +18,7 @@ export function ActiveChildrenCard() {
           <>
             <p className="text-2xl font-bold">{data?.active ?? 0}</p>
             {!!data?.newThisMonth && (
-              <p className="text-xs text-green-600 font-medium mt-1">
+              <p className="text-xs text-sky-600 font-medium mt-1">
                 +{data.newThisMonth} цього місяця
               </p>
             )}

@@ -32,7 +32,7 @@ export function SchoolBalanceWidget() {
         {isLoading ? (
           <div className="h-6 w-24 bg-gray-100 rounded animate-pulse" />
         ) : (
-          <p className={`text-xl font-bold ${isNegative ? 'text-red-600' : 'text-green-700'}`}>
+          <p className={`text-xl font-bold ${isNegative ? 'text-red-600' : 'text-foreground'}`}>
             {formatCurrency(balance)}
           </p>
         )}
@@ -45,7 +45,7 @@ export function SchoolBalanceWidget() {
                   {new Date(tx.createdAt).toLocaleDateString('uk-UA')} · {tx.admin.name}
                 </span>
                 <span className="flex-1 px-2">{REASON_LABELS[tx.reason] ?? tx.reason}</span>
-                <span className={`font-medium tabular-nums ${Number(tx.amount) >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                <span className={`font-medium tabular-nums ${Number(tx.amount) >= 0 ? 'text-foreground' : 'text-red-600'}`}>
                   {Number(tx.amount) > 0 ? '+' : ''}{formatCurrency(Number(tx.amount))}
                 </span>
               </div>

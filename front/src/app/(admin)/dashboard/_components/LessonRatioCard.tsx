@@ -33,12 +33,12 @@ export function LessonRatioCard({ period, date }: LessonRatioCardProps) {
             ) : (
               <>
                 <div className="flex items-end gap-2 mb-2">
-                  <span className="text-2xl font-bold text-green-600">{conductedPct}%</span>
+                  <span className="text-2xl font-bold text-foreground">{conductedPct}%</span>
                   <span className="text-sm text-gray-400 mb-0.5">проведено</span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div
-                    className="h-full bg-green-500 rounded-full transition-all"
+                    className="h-full bg-foreground rounded-full transition-all"
                     style={{ width: `${conductedPct}%` }}
                   />
                 </div>
