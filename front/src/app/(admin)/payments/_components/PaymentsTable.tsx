@@ -17,6 +17,12 @@ import { useDeletePayment } from '@/lib/payments';
 import { formatCurrency } from '@/lib/format';
 import type { Payment } from '@/types/payment';
 
+const TYPE_LABELS: Record<string, string> = {
+  CASH: 'Готівка',
+  TRANSFER: 'Переказ',
+  PREPAID: 'Передоплата',
+};
+
 type SortKey = 'date' | 'child' | 'teacher' | 'amount';
 type SortDir = 'asc' | 'desc' | null;
 
@@ -68,6 +74,36 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
 
   return (
     <>
+    <div className="md:hidden divide-y">
+      {sorted.map((payment) => {
+        const flag = getCountry(payment.child.country)?.flag ?? payment.child.country;
+        const dateStr = new Date(payment.date).toLocaleDateString('uk-UA', {
+          day: '2-digit', month: '2-digit', year: '2-digit',
+        });
+        return (
+          <div key={payment.id} className="px-4 py-3 flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <ChildAvatar name={payment.child.name} avatar={payment.child.avatar} size={24} />
+                <span className="text-sm font-medium">{payment.child.name}</span>
+                <span>{flag}</span>
+              </div>
+              <p className="text-xs text-gray-500">{payment.teacher.name} · {dateStr}</p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-sm font-semibold">{formatCurrency(Number(payment.amount))}</span>
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs shrink-0" onClick={() => onEdit(payment)}>
+              Ред.
+            </Button>
+          </div>
+        );
+      })}
+      {sorted.length === 0 && (
+        <p className="px-4 py-6 text-sm text-gray-400 text-center">Оплат не знайдено</p>
+      )}
+    </div>
+    <div className="hidden md:block">
     <Table>
       <TableHeader>
         <TableRow>
@@ -119,6 +155,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
         )}
       </TableBody>
     </Table>
+    </div>
 
     <AlertDialog open={!!confirmId} onOpenChange={(v) => !v && setConfirmId(null)}>
       <AlertDialogContent>
