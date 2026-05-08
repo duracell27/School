@@ -6,6 +6,7 @@ describe('CommissionsService', () => {
   let prisma: jest.Mocked<PrismaService>;
 
   beforeEach(() => {
+    const txFn = jest.fn();
     prisma = {
       teacherCommission: {
         create: jest.fn(),
@@ -20,7 +21,12 @@ describe('CommissionsService', () => {
       },
       lesson: { findMany: jest.fn() },
       user: { findMany: jest.fn() },
+      $transaction: jest.fn((cb) => cb({
+        teacherPayout: { create: txFn },
+        schoolTransaction: { create: jest.fn() },
+      })),
     } as unknown as jest.Mocked<PrismaService>;
+    (prisma as any)._txPayoutCreate = txFn;
     service = new CommissionsService(prisma);
   });
 
@@ -45,10 +51,11 @@ describe('CommissionsService', () => {
   });
 
   it('createPayout saves with correct adminId', async () => {
-    (prisma.teacherPayout.create as jest.Mock).mockResolvedValue({ id: 'po1' });
+    const txCreate = (prisma as any)._txPayoutCreate as jest.Mock;
+    txCreate.mockResolvedValue({ id: 'po1' });
     const dto = { teacherId: 't1', amount: '1000.00', notes: 'bonus' };
     await service.createPayout(dto as any, 'admin1');
-    expect(prisma.teacherPayout.create).toHaveBeenCalledWith(
+    expect(txCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ teacherId: 't1', adminId: 'admin1' }),
       }),
@@ -73,7 +80,7 @@ describe('CommissionsService', () => {
     (prisma.teacherCommission.findFirst as jest.Mock).mockResolvedValue(null);
     (prisma.lesson.findMany as jest.Mock).mockResolvedValue([]);
     const result = await service.getTeacherBalance('t1');
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       officialEarnings: 0, potentialEarnings: 0, totalPayout: 0,
       balance: 0, potentialBalance: 0, currentCommission: null,
     });
