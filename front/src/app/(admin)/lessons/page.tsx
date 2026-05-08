@@ -6,8 +6,11 @@ import { Input } from '@/components/ui/input';
 import { LessonsTable } from '@/components/lessons/lessons-table';
 import { LessonModal } from '@/components/lessons/lesson-modal';
 import { DeleteDialog } from '@/components/lessons/delete-dialog';
-import { useLessons } from '@/lib/lessons';
+import { PaginationControls } from '@/components/ui/pagination-controls';
+import { useLessonsPaginated } from '@/lib/lessons';
 import type { Lesson } from '@/types/lesson';
+
+const LIMIT = 20;
 
 type ModalState =
   | { open: false }
@@ -19,15 +22,22 @@ type DeleteState = { open: false } | { open: true; lesson: Lesson };
 export default function LessonsPage() {
   const [search, setSearch] = useState('');
   const [date, setDate] = useState('');
+  const [page, setPage] = useState(1);
 
-  const { data: lessons = [], isLoading, error } = useLessons({ date: date || undefined });
+  const { data: result, isLoading, error } = useLessonsPaginated({ date: date || undefined, page, limit: LIMIT });
 
+  const lessons = result?.data ?? [];
   const filtered = search.trim()
     ? lessons.filter((l) => l.child.name.toLowerCase().includes(search.trim().toLowerCase()))
     : lessons;
 
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false });
+
+  function handleDateChange(val: string) {
+    setDate(val);
+    setPage(1);
+  }
 
   if (isLoading) return <p className="text-gray-500">Завантаження...</p>;
   if (error) return <p className="text-red-500">Помилка завантаження уроків</p>;
@@ -37,7 +47,7 @@ export default function LessonsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">
           Уроки{' '}
-          <span className="text-sm font-normal text-gray-400">({filtered.length})</span>
+          <span className="text-sm font-normal text-gray-400">({result?.total ?? 0})</span>
         </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>+ Додати урок</Button>
       </div>
@@ -57,13 +67,13 @@ export default function LessonsPage() {
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => handleDateChange(e.target.value)}
               lang="uk-UA"
               className="flex h-9 w-44 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           {date && (
-            <Button variant="outline" size="sm" onClick={() => setDate('')}>✕</Button>
+            <Button variant="outline" size="sm" onClick={() => handleDateChange('')}>✕</Button>
           )}
         </div>
       </div>
@@ -74,6 +84,15 @@ export default function LessonsPage() {
           onEdit={(lesson) => setModal({ open: true, mode: 'edit', lesson })}
           onDelete={(lesson) => setDeleteState({ open: true, lesson })}
         />
+        {result && (
+          <PaginationControls
+            page={result.page}
+            totalPages={result.totalPages}
+            total={result.total}
+            limit={LIMIT}
+            onPage={setPage}
+          />
+        )}
       </div>
       <LessonModal
         open={modal.open}

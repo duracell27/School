@@ -75,7 +75,9 @@ export class PaymentsService {
   }
 
   async reallocate(childId: string, teacherId: string): Promise<void> {
-    const [payments, lessons] = await Promise.all([
+    // Fetch all read-only data before the transaction to avoid async queries inside a loop
+    // within a single pg client (interactive transaction), which triggers pg deprecation warnings.
+    const [payments, lessons, allPairLessons] = await Promise.all([
       this.prisma.payment.findMany({
         where: { childId, teacherId },
         orderBy: { date: 'asc' },
@@ -86,36 +88,57 @@ export class PaymentsService {
         orderBy: { startDate: 'asc' },
         select: { id: true, price: true, status: true, startDate: true },
       }),
-    ]);
-
-    await this.prisma.$transaction(async (tx) => {
-      // Delete SchoolTransaction(LESSON_SCHOOL_SHARE) for ALL lessons in this pair
-      // (includes CANCELLED/RESCHEDULED lessons that may have had stale records)
-      const allPairLessonIds = await tx.lesson.findMany({
+      this.prisma.lesson.findMany({
         where: { childId, teacherId },
         select: { id: true },
-      }).then(ls => ls.map(l => l.id));
+      }),
+    ]);
 
+    const allPairLessonIds = allPairLessons.map(l => l.id);
+    const lessonDateMap = new Map(lessons.map(l => [l.id, l.startDate]));
+
+    const records = payments.length > 0
+      ? computeAllocation(
+          payments.map(p => ({ id: p.id, amount: Number(p.amount) })),
+          lessons.map(l => ({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' })),
+        )
+      : [];
+
+    // Pre-fetch commissions for all unique lesson dates (DEBT records only)
+    const dateKeyToDate = new Map<string, Date>();
+    for (const r of records) {
+      if (r.type !== 'DEBT') continue;
+      const startDate = lessonDateMap.get(r.lessonId);
+      if (!startDate) continue;
+      const dateKey = startDate.toISOString().slice(0, 10);
+      if (!dateKeyToDate.has(dateKey)) dateKeyToDate.set(dateKey, startDate);
+    }
+
+    const commissionEntries = await Promise.all(
+      [...dateKeyToDate.entries()].map(async ([dateKey, startDate]) => {
+        const commission = await this.prisma.teacherCommission.findFirst({
+          where: { teacherId, effectiveFrom: { lte: startDate } },
+          orderBy: { effectiveFrom: 'desc' },
+          select: { percentage: true },
+        });
+        return [dateKey, commission ? Number(commission.percentage) : null] as const;
+      }),
+    );
+    const commissionCache = new Map(commissionEntries);
+
+    // Transaction contains only writes — no async lookups inside loops
+    await this.prisma.$transaction(async (tx) => {
       if (allPairLessonIds.length > 0) {
         await tx.schoolTransaction.deleteMany({
           where: { lessonId: { in: allPairLessonIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
         });
       }
 
-      // Delete PaymentLesson (cascades to TeacherEarning)
       await tx.paymentLesson.deleteMany({
         where: { paymentId: { in: payments.map(p => p.id) } },
       });
 
-      // Fix 2: early-return after cleanup so deletions still happen when payments is empty
-      if (payments.length === 0) return;
-
-      const records = computeAllocation(
-        payments.map(p => ({ id: p.id, amount: Number(p.amount) })),
-        lessons.map(l => ({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' })),
-      );
-
-      if (records.length === 0) return;
+      if (payments.length === 0 || records.length === 0) return;
 
       const createdPLs = await tx.paymentLesson.createManyAndReturn({
         data: records.map(r => ({
@@ -127,12 +150,9 @@ export class PaymentsService {
         select: { id: true, lessonId: true, amount: true, type: true },
       });
 
-      // Build TeacherEarning + SchoolTransaction(LESSON_SCHOOL_SHARE) for DEBT allocations
       const debtPLs = createdPLs.filter(pl => pl.type === 'DEBT');
       if (debtPLs.length === 0) return;
 
-      const lessonDateMap = new Map(lessons.map(l => [l.id, l.startDate]));
-      const commissionCache = new Map<string, number | null>();
       const earningsData: Array<{
         teacherId: string;
         lessonId: string;
@@ -150,25 +170,13 @@ export class PaymentsService {
         const startDate = lessonDateMap.get(pl.lessonId);
         if (!startDate) continue;
 
-        // Fix 5: use date-only key to match effectiveFrom date-precision semantics
         const dateKey = startDate.toISOString().slice(0, 10);
-        if (!commissionCache.has(dateKey)) {
-          const commission = await tx.teacherCommission.findFirst({
-            where: { teacherId, effectiveFrom: { lte: startDate } },
-            orderBy: { effectiveFrom: 'desc' },
-            select: { percentage: true },
-          });
-          commissionCache.set(dateKey, commission ? Number(commission.percentage) : null);
-        }
-
         const pct = commissionCache.get(dateKey);
         if (pct === null || pct === undefined) continue;
 
         const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
-        // Full lesson payment credited to school; teacher commission tracked as owed (TeacherEarning)
         const schoolAmt = Number(pl.amount);
 
-        // Fix 4: guard zero-amount entries
         if (teacherAmt > 0) {
           earningsData.push({
             teacherId,
@@ -221,6 +229,16 @@ export class PaymentsService {
         ...(query.from ? { gte: new Date(query.from) } : {}),
         ...(query.to ? { lte: new Date(query.to) } : {}),
       };
+    }
+    const { page, limit } = query;
+    if (limit != null) {
+      const take = limit;
+      const skip = ((page ?? 1) - 1) * limit;
+      const [total, data] = await Promise.all([
+        this.prisma.payment.count({ where }),
+        this.prisma.payment.findMany({ where, select: paymentSelect, orderBy: { date: 'desc' }, skip, take }),
+      ]);
+      return { data, total, page: page ?? 1, totalPages: Math.ceil(total / limit) };
     }
     return this.prisma.payment.findMany({
       where,

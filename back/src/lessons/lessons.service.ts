@@ -54,8 +54,8 @@ export class LessonsService {
     private readonly payments: PaymentsService,
   ) {}
 
-  findAll(userId: string, userRole: Role, query: LessonQueryDto) {
-    const { teacherId, weekStart, date } = query;
+  async findAll(userId: string, userRole: Role, query: LessonQueryDto) {
+    const { teacherId, weekStart, date, page, limit } = query;
     const where: Prisma.LessonWhereInput = {};
 
     if (userRole === Role.TEACHER) {
@@ -77,7 +77,24 @@ export class LessonsService {
       where.startDate = { gte: start, lt: end };
     }
 
+    const paginate = !weekStart && limit != null;
+    const take = paginate ? limit : undefined;
+    const skip = paginate ? ((page ?? 1) - 1) * limit! : undefined;
+    const orderBy = { startDate: 'desc' as const };
+
     if (isAdminRole(userRole)) {
+      if (paginate) {
+        const [total, lessons] = await Promise.all([
+          this.prisma.lesson.count({ where }),
+          this.prisma.lesson.findMany({ where, select: lessonSelectWithPayments, orderBy, skip, take }),
+        ]);
+        const data = lessons.map(l => ({
+          ...l,
+          paymentStatus: computePaymentStatus(l),
+          paymentLessons: undefined,
+        }));
+        return { data, total, page: page ?? 1, totalPages: Math.ceil(total / limit!) };
+      }
       return this.prisma.lesson.findMany({
         where,
         select: lessonSelectWithPayments,
@@ -89,6 +106,14 @@ export class LessonsService {
           paymentLessons: undefined,
         }))
       );
+    }
+
+    if (paginate) {
+      const [total, data] = await Promise.all([
+        this.prisma.lesson.count({ where }),
+        this.prisma.lesson.findMany({ where, select: lessonSelectBase, orderBy, skip, take }),
+      ]);
+      return { data, total, page: page ?? 1, totalPages: Math.ceil(total / limit!) };
     }
 
     return this.prisma.lesson.findMany({

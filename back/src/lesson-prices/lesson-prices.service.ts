@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateLessonPriceDto } from './dto/create-lesson-price.dto';
 import { UpdateLessonPriceDto } from './dto/update-lesson-price.dto';
+import { LessonPriceQueryDto } from './dto/lesson-price-query.dto';
 
 const lessonPriceSelect = {
   id: true,
@@ -19,7 +20,17 @@ const lessonPriceSelect = {
 export class LessonPricesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
+  async findAll(query: LessonPriceQueryDto = {}) {
+    const { page, limit } = query;
+    if (limit != null) {
+      const take = limit;
+      const skip = ((page ?? 1) - 1) * limit;
+      const [total, data] = await Promise.all([
+        this.prisma.lessonPrice.count(),
+        this.prisma.lessonPrice.findMany({ select: lessonPriceSelect, orderBy: { effectiveDate: 'desc' }, skip, take }),
+      ]);
+      return { data, total, page: page ?? 1, totalPages: Math.ceil(total / limit) };
+    }
     return this.prisma.lessonPrice.findMany({
       select: lessonPriceSelect,
       orderBy: { effectiveDate: 'desc' },
