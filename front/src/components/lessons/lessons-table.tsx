@@ -41,7 +41,7 @@ const PAYMENT_STATUS_LABELS: Record<NonNullable<PaymentStatus>, string> = {
 };
 
 const PAYMENT_STATUS_COLORS: Record<NonNullable<PaymentStatus>, string> = {
-  PAID: 'bg-green-100 text-green-700',
+  PAID: 'bg-slate-100 text-slate-700',
   UNPAID: 'bg-red-100 text-red-700',
   PREPAID: 'bg-blue-100 text-blue-700',
 };
@@ -166,94 +166,139 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead><SortBtn label="Учень" col="child" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-            <TableHead><SortBtn label="Вчитель" col="teacher" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-            <TableHead><SortBtn label="Статус" col="status" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-            {isAdmin && (
-              <TableHead>
-                <SortBtn label="Оплата" col="paymentStatus" activeCol={sortKey} dir={sortDir} onToggle={handleSort} />
-              </TableHead>
-            )}
-            <TableHead><SortBtn label="Час заняття" col="startDate" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
-            <TableHead>Ціна</TableHead>
-            <TableHead className="text-right">Дії</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map((lesson) => (
-            <TableRow key={lesson.id} className={isOverdue(lesson) ? 'bg-red-50' : ''}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
-                  <span className="font-medium">{lesson.child.name}</span>
-                  <span className="text-base">{getCountry(lesson.child.country)?.flag ?? lesson.child.country}</span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <UserAvatar name={lesson.teacher.name} avatar={lesson.teacher.avatar} size={28} />
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
-                    {lesson.teacher.name}
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-col gap-1">
-                  <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} />
-                  {isOverdue(lesson) && (
-                    <span className="text-xs text-red-600 font-medium">Не оброблено!</span>
-                  )}
-                </div>
-              </TableCell>
-              {isAdmin && (
-                <TableCell>
-                  {lesson.paymentStatus ? (
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
-                      {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+      <div className="md:hidden divide-y">
+        {lessons.map((lesson) => {
+          const startStr = new Date(lesson.startDate).toLocaleString('uk-UA', {
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+          });
+          const overdue = lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
+          const badgeColor = overdue ? 'bg-red-100 text-red-700' : STATUS_COLORS[lesson.status];
+          const badgeLabel = overdue ? 'Не оброблено' : STATUS_LABELS[lesson.status];
+          return (
+            <div key={lesson.id} className="px-4 py-3 flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2 min-w-0">
+                <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={32} />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium leading-tight truncate">{lesson.child.name}</p>
+                  <p className="text-xs text-gray-500">{startStr}</p>
+                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${badgeColor}`}>
+                      {badgeLabel}
                     </span>
-                  ) : null}
-                </TableCell>
-              )}
-              <TableCell>
-                <div className="flex flex-col gap-0.5">
-                  <div>
-                    <div>{new Date(lesson.startDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                    <div className="text-xs text-gray-500">{fmtTime(lesson.startDate)} – {fmtTime(lesson.endDate)}</div>
+                    <span className="text-xs text-gray-600">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
+                    {lesson.paymentStatus && (
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                        {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+                      </span>
+                    )}
                   </div>
-                  {lesson.originalStartDate && (
-                    <div className="text-xs text-orange-500">
-                      <div>Було: {new Date(lesson.originalStartDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                      <div>{fmtTime(lesson.originalStartDate)}{lesson.originalEndDate ? ` – ${fmtTime(lesson.originalEndDate)}` : ''}</div>
-                    </div>
-                  )}
                 </div>
-              </TableCell>
-              <TableCell>{Number(lesson.price).toLocaleString('uk-UA')} грн</TableCell>
-              <TableCell className="text-right space-x-2">
-                {lesson.status === 'CONDUCTED' && lesson.note && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setNoteModal({ lessonId: lesson.id, mode: 'view' })}
-                  >
-                    <FileText size={14} className="mr-1" /> Нотатка
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={() => onEdit(lesson)}>Редагувати</Button>
-                <Button variant="destructive" size="sm" onClick={() => onDelete(lesson)}>Видалити</Button>
-              </TableCell>
-            </TableRow>
-          ))}
-          {lessons.length === 0 && (
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(lesson)}>
+                  Ред.
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(lesson)}>
+                  Вид.
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+        {lessons.length === 0 && (
+          <p className="px-4 py-6 text-sm text-gray-400 text-center">Уроків не знайдено</p>
+        )}
+      </div>
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
+              <TableHead><SortBtn label="Учень" col="child" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+              <TableHead><SortBtn label="Вчитель" col="teacher" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+              <TableHead><SortBtn label="Статус" col="status" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+              {isAdmin && (
+                <TableHead>
+                  <SortBtn label="Оплата" col="paymentStatus" activeCol={sortKey} dir={sortDir} onToggle={handleSort} />
+                </TableHead>
+              )}
+              <TableHead><SortBtn label="Час заняття" col="startDate" activeCol={sortKey} dir={sortDir} onToggle={handleSort} /></TableHead>
+              <TableHead>Ціна</TableHead>
+              <TableHead className="text-right">Дії</TableHead>
             </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((lesson) => (
+              <TableRow key={lesson.id} className={isOverdue(lesson) ? 'bg-red-50' : ''}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
+                    <span className="font-medium">{lesson.child.name}</span>
+                    <span className="text-base">{getCountry(lesson.child.country)?.flag ?? lesson.child.country}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <UserAvatar name={lesson.teacher.name} avatar={lesson.teacher.avatar} size={28} />
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-700">
+                      {lesson.teacher.name}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} />
+                    {isOverdue(lesson) && (
+                      <span className="text-xs text-red-600 font-medium">Не оброблено!</span>
+                    )}
+                  </div>
+                </TableCell>
+                {isAdmin && (
+                  <TableCell>
+                    {lesson.paymentStatus ? (
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                        {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+                      </span>
+                    ) : null}
+                  </TableCell>
+                )}
+                <TableCell>
+                  <div className="flex flex-col gap-0.5">
+                    <div>
+                      <div>{new Date(lesson.startDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                      <div className="text-xs text-gray-500">{fmtTime(lesson.startDate)} – {fmtTime(lesson.endDate)}</div>
+                    </div>
+                    {lesson.originalStartDate && (
+                      <div className="text-xs text-orange-500">
+                        <div>Було: {new Date(lesson.originalStartDate).toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
+                        <div>{fmtTime(lesson.originalStartDate)}{lesson.originalEndDate ? ` – ${fmtTime(lesson.originalEndDate)}` : ''}</div>
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>{Number(lesson.price).toLocaleString('uk-UA')} грн</TableCell>
+                <TableCell className="text-right space-x-2">
+                  {lesson.status === 'CONDUCTED' && lesson.note && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNoteModal({ lessonId: lesson.id, mode: 'view' })}
+                    >
+                      <FileText size={14} className="mr-1" /> Нотатка
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => onEdit(lesson)}>Редагувати</Button>
+                  <Button variant="destructive" size="sm" onClick={() => onDelete(lesson)}>Видалити</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {lessons.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-gray-400 py-8">Уроків не знайдено</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
       {noteModal && (
         <LessonNoteModal
