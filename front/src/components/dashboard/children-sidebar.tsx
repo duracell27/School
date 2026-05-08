@@ -10,7 +10,7 @@ import type { Child } from '@/types/child';
 import type { Lesson } from '@/types/lesson';
 
 const STATUS_DOT: Record<string, string> = {
-  CONDUCTED: 'bg-green-500',
+  CONDUCTED: 'bg-slate-400',
   PLANNED: 'bg-blue-500',
   RESCHEDULED: 'bg-amber-400',
   CANCELLED: 'bg-gray-300',

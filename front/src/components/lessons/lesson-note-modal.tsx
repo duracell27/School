@@ -16,7 +16,7 @@ interface LessonNoteModalProps {
   onClose: () => void;
   lessonId: string;
   mode: 'create' | 'view';
-  onSaved?: () => void;
+  onSaved?: () => Promise<void> | void;
 }
 
 export function LessonNoteModal({ open, onClose, lessonId, mode, onSaved }: LessonNoteModalProps) {
@@ -27,6 +27,7 @@ export function LessonNoteModal({ open, onClose, lessonId, mode, onSaved }: Less
   const [imageData, setImageData] = useState<string | undefined>(undefined);
   const [imagePreview, setImagePreview] = useState<string | undefined>(undefined);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: existingNote, isLoading: noteLoading } = useLessonNote(mode === 'view' ? lessonId : null);
@@ -54,11 +55,16 @@ export function LessonNoteModal({ open, onClose, lessonId, mode, onSaved }: Less
       setError("Скріншот обов'язковий");
       return;
     }
-    await upsert.mutateAsync({ lessonId, description: description.trim(), imageData });
-    if (onSaved) {
-      onSaved();
-    } else {
-      onClose();
+    setIsSubmitting(true);
+    try {
+      await upsert.mutateAsync({ lessonId, description: description.trim(), imageData });
+      if (onSaved) {
+        await onSaved();
+      } else {
+        onClose();
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -168,8 +174,8 @@ export function LessonNoteModal({ open, onClose, lessonId, mode, onSaved }: Less
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>Скасувати</Button>
-          <Button onClick={handleSubmit} disabled={upsert.isPending}>
-            {upsert.isPending ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+          <Button onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
             Зберегти
           </Button>
         </DialogFooter>
