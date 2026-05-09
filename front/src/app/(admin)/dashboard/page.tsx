@@ -98,8 +98,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
         <h2 className="text-xl font-semibold">Дашборд</h2>
         <PeriodSwitcher
           period={period}

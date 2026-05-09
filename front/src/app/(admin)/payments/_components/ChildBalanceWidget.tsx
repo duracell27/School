@@ -10,9 +10,9 @@ export function ChildBalanceWidget() {
 
   if (isLoading) {
     return (
-      <div className="flex gap-3 flex-wrap">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-24 w-48 rounded-xl bg-gray-100 animate-pulse" />
+      <div className="grid grid-cols-2 gap-2 md:flex md:gap-3 md:flex-wrap">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />
         ))}
       </div>
     );
@@ -32,7 +32,7 @@ export function ChildBalanceWidget() {
   });
 
   return (
-    <div className="flex gap-3 flex-wrap">
+    <div className="grid grid-cols-2 gap-2 md:flex md:gap-3 md:flex-wrap">
       {sorted.map(({ child, teacher, debtCount, debtUah, prepaidCount, leftoverUah }) => {
         const isDebt = debtCount > 0 || debtUah > 0;
         const isPrepaid = prepaidCount > 0;
@@ -42,7 +42,7 @@ export function ChildBalanceWidget() {
         return (
           <div
             key={`${child.id}:${teacher.id}`}
-            className="flex flex-col gap-2 rounded-xl border bg-white px-4 py-3 min-w-[170px]"
+            className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3 md:min-w-[170px] md:px-4"
           >
             <div className="flex items-center gap-2">
               <ChildAvatar name={child.name} avatar={child.avatar} size={28} />

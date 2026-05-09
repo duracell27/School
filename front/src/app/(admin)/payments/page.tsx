@@ -75,6 +75,7 @@ export default function PaymentsPage() {
           <span className="text-sm text-gray-500">Від</span>
           <Input
             type="date"
+            lang="uk-UA"
             value={fromFilter}
             onChange={e => handleFilterChange(() => setFromFilter(e.target.value))}
             className="w-full sm:w-36"
@@ -84,6 +85,7 @@ export default function PaymentsPage() {
           <span className="text-sm text-gray-500">До</span>
           <Input
             type="date"
+            lang="uk-UA"
             value={toFilter}
             onChange={e => handleFilterChange(() => setToFilter(e.target.value))}
             className="w-full sm:w-36"

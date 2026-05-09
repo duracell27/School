@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LessonsTable } from '@/components/lessons/lessons-table';
 import { LessonModal } from '@/components/lessons/lesson-modal';
+import { LessonNoteModal } from '@/components/lessons/lesson-note-modal';
 import { DeleteDialog } from '@/components/lessons/delete-dialog';
 import { PaginationControls } from '@/components/ui/pagination-controls';
 import { useLessonsPaginated } from '@/lib/lessons';
@@ -33,6 +34,7 @@ export default function LessonsPage() {
 
   const [modal, setModal] = useState<ModalState>({ open: false });
   const [deleteState, setDeleteState] = useState<DeleteState>({ open: false });
+  const [pendingNoteModal, setPendingNoteModal] = useState<{ lessonId: string } | null>(null);
 
   function handleDateChange(val: string) {
     setDate(val);
@@ -98,7 +100,21 @@ export default function LessonsPage() {
         open={modal.open}
         lesson={modal.open && modal.mode === 'edit' ? modal.lesson : undefined}
         onClose={() => setModal({ open: false })}
+        onSaved={(newStatus, prevStatus) => {
+          if (newStatus === 'CONDUCTED' && prevStatus !== 'CONDUCTED' && modal.open && modal.mode === 'edit') {
+            setPendingNoteModal({ lessonId: modal.lesson.id });
+          }
+        }}
       />
+      {pendingNoteModal && (
+        <LessonNoteModal
+          open={true}
+          onClose={() => setPendingNoteModal(null)}
+          lessonId={pendingNoteModal.lessonId}
+          mode="create"
+          onSaved={() => setPendingNoteModal(null)}
+        />
+      )}
       <DeleteDialog
         open={deleteState.open}
         lesson={deleteState.open ? deleteState.lesson : null}

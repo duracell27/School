@@ -54,9 +54,10 @@ interface LessonModalProps {
   defaultEndDate?: string;   // ISO string
   defaultTeacherId?: string;
   defaultChildId?: string;
+  onSaved?: (newStatus: LessonStatus, prevStatus: LessonStatus | undefined) => void;
 }
 
-export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEndDate, defaultTeacherId, defaultChildId }: LessonModalProps) {
+export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEndDate, defaultTeacherId, defaultChildId, onSaved }: LessonModalProps) {
   const isEdit = !!lesson;
   const [submitError, setSubmitError] = useState('');
   const [childId, setChildId] = useState('');
@@ -166,6 +167,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
         await createLesson.mutateAsync(payload);
       }
       onClose();
+      onSaved?.(status, lesson?.status);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Щось пішло не так');
     }

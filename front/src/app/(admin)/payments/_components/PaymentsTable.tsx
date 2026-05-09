@@ -91,11 +91,23 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
               <p className="text-xs text-gray-500">{payment.teacher.name} · {dateStr}</p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-sm font-semibold">{formatCurrency(Number(payment.amount))}</span>
+                {payment.notes && (
+                  <span className="text-xs text-gray-400 truncate max-w-[120px]">{payment.notes}</span>
+                )}
               </div>
             </div>
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs shrink-0" onClick={() => onEdit(payment)}>
-              Ред.
-            </Button>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(payment)}>
+                Ред.
+              </Button>
+              <Button
+                size="sm" variant="outline"
+                className="h-7 px-2 text-xs text-red-500 border-red-200"
+                onClick={() => setConfirmId(payment.id)}
+              >
+                Вид.
+              </Button>
+            </div>
           </div>
         );
       })}

@@ -11,7 +11,6 @@ import { apiFetch } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard', label: 'Дашборд' },
-  { href: '/calendar', label: 'Календар' },
   { href: '/users', label: 'Користувачі' },
   { href: '/children', label: 'Діти' },
   { href: '/lessons', label: 'Уроки', showBadge: true },

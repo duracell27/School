@@ -171,37 +171,49 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           const startStr = new Date(lesson.startDate).toLocaleString('uk-UA', {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
           });
-          const overdue = lesson.status === 'PLANNED' && new Date(lesson.endDate) < new Date();
-          const badgeColor = overdue ? 'bg-red-100 text-red-700' : STATUS_COLORS[lesson.status];
-          const badgeLabel = overdue ? 'Не оброблено' : STATUS_LABELS[lesson.status];
+          const overdue = isOverdue(lesson);
           return (
-            <div key={lesson.id} className="px-4 py-3 flex items-start justify-between gap-2">
-              <div className="flex items-start gap-2 min-w-0">
-                <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={32} />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium leading-tight truncate">{lesson.child.name}</p>
-                  <p className="text-xs text-gray-500">{startStr}</p>
-                  <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${badgeColor}`}>
-                      {badgeLabel}
-                    </span>
-                    <span className="text-xs text-gray-600">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
-                    {lesson.paymentStatus && (
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
-                        {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
-                      </span>
-                    )}
+            <div key={lesson.id} className="px-4 py-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 min-w-0">
+                  <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={32} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-tight truncate">{lesson.child.name}</p>
+                    <p className="text-xs text-gray-500">{startStr}</p>
+                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span className="text-xs text-gray-600">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
+                      {lesson.paymentStatus && (
+                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                          {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+                        </span>
+                      )}
+                      {overdue && (
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
+                          Не оброблено
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  {lesson.status === 'CONDUCTED' && lesson.note && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setNoteModal({ lessonId: lesson.id, mode: 'view' })}
+                    >
+                      <FileText size={12} />
+                    </Button>
+                  )}
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(lesson)}>
+                    Ред.
+                  </Button>
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(lesson)}>
+                    Вид.
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(lesson)}>
-                  Ред.
-                </Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(lesson)}>
-                  Вид.
-                </Button>
-              </div>
+              <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} />
             </div>
           );
         })}
