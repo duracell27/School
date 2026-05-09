@@ -17,7 +17,7 @@ interface PeriodSwitcherProps {
 
 export function PeriodSwitcher({ period, label, onPeriodChange, onPrev, onNext }: PeriodSwitcherProps) {
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-3 flex-wrap justify-center">
       <div role="group" aria-label="Виберіть період" className="inline-flex rounded-lg border bg-white overflow-hidden">
         {OPTIONS.map((opt) => (
           <button

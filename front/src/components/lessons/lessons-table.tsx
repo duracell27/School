@@ -51,9 +51,11 @@ const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESC
 function StatusSelect({
   lesson,
   onMarkConducted,
+  className,
 }: {
   lesson: Lesson;
   onMarkConducted: (lesson: Lesson) => void;
+  className?: string;
 }) {
   const update = useUpdateLesson();
 
@@ -71,7 +73,7 @@ function StatusSelect({
       value={lesson.status}
       onChange={handleChange}
       disabled={update.isPending}
-      className={`cursor-pointer py-0.5 pl-2 pr-1 text-xs font-medium rounded-full border-0 outline-none disabled:opacity-50 ${STATUS_COLORS[lesson.status]}`}
+      className={`cursor-pointer py-0.5 pl-2 pr-1 text-xs font-medium rounded-full border-0 outline-none disabled:opacity-50 ${STATUS_COLORS[lesson.status]} ${className ?? ''}`}
     >
       {ALL_STATUSES.map((s) => (
         <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -182,11 +184,6 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                     <p className="text-xs text-gray-500">{startStr}</p>
                     <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                       <span className="text-xs text-gray-600">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
-                      {lesson.paymentStatus && (
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
-                          {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
-                        </span>
-                      )}
                       {overdue && (
                         <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
                           Не оброблено
@@ -213,7 +210,18 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                   </Button>
                 </div>
               </div>
-              <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} />
+              <div className="flex items-center gap-2">
+                <StatusSelect
+                  lesson={lesson}
+                  onMarkConducted={handleMarkConducted}
+                  className={lesson.paymentStatus ? '' : 'w-full'}
+                />
+                {lesson.paymentStatus && (
+                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                    {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
