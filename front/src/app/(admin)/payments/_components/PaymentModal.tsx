@@ -6,6 +6,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -150,7 +151,7 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
 
           <div className="space-y-1">
             <Label>Дата</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+            <DatePicker value={date} onChange={setDate} />
           </div>
 
           <div className="space-y-1">

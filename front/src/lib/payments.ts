@@ -6,9 +6,10 @@ import type {
 } from '@/types/payment';
 import type { Paginated } from './lessons';
 
-export function usePayments(filters: { teacherId?: string; from?: string; to?: string; page: number; limit: number }) {
+export function usePayments(filters: { teacherId?: string; childId?: string; from?: string; to?: string; page: number; limit: number }) {
   const params = new URLSearchParams();
   if (filters.teacherId) params.set('teacherId', filters.teacherId);
+  if (filters.childId) params.set('childId', filters.childId);
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
   params.set('page', String(filters.page));

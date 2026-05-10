@@ -31,7 +31,7 @@ export default function UsersPage() {
           <span className="text-sm font-normal text-gray-400">({users.length})</span>
         </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>
-          + Створити користувача
+          + Додати користувача
         </Button>
       </div>
 

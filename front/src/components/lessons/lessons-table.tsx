@@ -41,7 +41,7 @@ const PAYMENT_STATUS_LABELS: Record<NonNullable<PaymentStatus>, string> = {
 };
 
 const PAYMENT_STATUS_COLORS: Record<NonNullable<PaymentStatus>, string> = {
-  PAID: 'bg-slate-100 text-slate-700',
+  PAID: 'bg-green-100 text-green-700',
   UNPAID: 'bg-red-100 text-red-700',
   PREPAID: 'bg-blue-100 text-blue-700',
 };
@@ -73,7 +73,7 @@ function StatusSelect({
       value={lesson.status}
       onChange={handleChange}
       disabled={update.isPending}
-      className={`cursor-pointer py-0.5 pl-2 pr-1 text-xs font-medium rounded-full border-0 outline-none disabled:opacity-50 ${STATUS_COLORS[lesson.status]} ${className ?? ''}`}
+      className={`cursor-pointer py-0.5 pl-2 pr-1 text-xs font-medium rounded-full border-0 outline-none disabled:opacity-50 text-center ${STATUS_COLORS[lesson.status]} ${className ?? ''}`}
     >
       {ALL_STATUSES.map((s) => (
         <option key={s} value={s}>{STATUS_LABELS[s]}</option>
@@ -175,20 +175,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           });
           const overdue = isOverdue(lesson);
           return (
-            <div key={lesson.id} className="px-4 py-3 space-y-2">
+            <div key={lesson.id} className={`px-4 py-3 space-y-2 ${overdue ? 'bg-red-50' : ''}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-start gap-2 min-w-0">
                   <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={32} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium leading-tight truncate">{lesson.child.name}</p>
-                    <p className="text-xs text-gray-500">{startStr}</p>
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      <span className="text-xs text-gray-600">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
-                      {overdue && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">
-                          Не оброблено
-                        </span>
-                      )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs font-medium text-gray-500">{startStr}</p>
+                      <span className="text-xs text-gray-400">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
                     </div>
                   </div>
                 </div>
@@ -214,10 +209,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 <StatusSelect
                   lesson={lesson}
                   onMarkConducted={handleMarkConducted}
-                  className={lesson.paymentStatus ? '' : 'w-full'}
+                  className={lesson.paymentStatus || overdue ? 'flex-1' : 'w-full'}
                 />
+                {overdue && !lesson.paymentStatus && (
+                  <span className="flex-1 text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap bg-red-100 text-red-700">
+                    Не оброблено
+                  </span>
+                )}
                 {lesson.paymentStatus && (
-                  <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
+                  <span className={`flex-1 text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
                     {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
                   </span>
                 )}

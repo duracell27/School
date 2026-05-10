@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -26,6 +26,7 @@ import { useCreateUser, useUpdateUser } from '@/lib/users';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import { UserAvatar } from './user-avatar';
 import type { User } from '@/types/user';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const baseFields = {
   name: z.string().min(1, "Обов'язкове поле"),
@@ -71,6 +72,7 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
     reset,
     setValue,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<CreateForm | EditForm>({
     resolver: zodResolver(isEdit ? editSchema : createSchema),
@@ -233,12 +235,16 @@ export function UserModal({ open, onClose, user }: UserModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="hireDate">Дата прийому</Label>
-              <Input id="hireDate" type="date" {...register('hireDate')} />
+              <Label>Дата прийому</Label>
+              <Controller control={control} name="hireDate" render={({ field }) => (
+                <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+              )} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="terminationDate">Дата звільнення</Label>
-              <Input id="terminationDate" type="date" {...register('terminationDate')} />
+              <Label>Дата звільнення</Label>
+              <Controller control={control} name="terminationDate" render={({ field }) => (
+                <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+              )} />
             </div>
           </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Image from 'next/image';
@@ -24,6 +24,7 @@ import { DEFAULT_COUNTRY } from '@/lib/countries';
 import { CountrySelect } from './country-select';
 import { ChildAvatar } from './child-avatar';
 import type { Child } from '@/types/child';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const TIMEZONES = [
   '-12', '-11', '-10', '-9', '-8', '-7', '-6', '-5', '-4', '-3', '-2', '-1',
@@ -67,6 +68,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
     handleSubmit,
     reset,
     watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
 
@@ -241,12 +243,16 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="child-hireDate">Дата прийняття</Label>
-              <Input id="child-hireDate" type="date" {...register('hireDate')} />
+              <Label>Дата прийняття</Label>
+              <Controller control={control} name="hireDate" render={({ field }) => (
+                <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+              )} />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="child-graduationDate">Дата закінчення</Label>
-              <Input id="child-graduationDate" type="date" {...register('graduationDate')} />
+              <Label>Дата закінчення</Label>
+              <Controller control={control} name="graduationDate" render={({ field }) => (
+                <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+              )} />
             </div>
           </div>
 

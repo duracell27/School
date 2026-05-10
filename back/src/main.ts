@@ -11,6 +11,7 @@ async function bootstrap() {
     'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:3003',
+    /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/,
     ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ];
 
@@ -21,6 +22,6 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, transform: true }),
   );
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 }
 bootstrap();

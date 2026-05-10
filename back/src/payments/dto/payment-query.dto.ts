@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 
 export class PaymentQueryDto {
   @IsString() @IsOptional() teacherId?: string;
+  @IsString() @IsOptional() childId?: string;
   @IsDateString() @IsOptional() from?: string;
   @IsDateString() @IsOptional() to?: string;
 

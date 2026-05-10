@@ -224,6 +224,7 @@ export class PaymentsService {
   async findAll(query: PaymentQueryDto) {
     const where: Prisma.PaymentWhereInput = {};
     if (query.teacherId) where.teacherId = query.teacherId;
+    if (query.childId) where.childId = query.childId;
     if (query.from || query.to) {
       where.date = {
         ...(query.from ? { gte: new Date(query.from) } : {}),

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { useSetCommission } from '@/lib/commissions';
 
@@ -59,11 +60,7 @@ export function CommissionRateModal({ teacherId, open, onClose }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label>Діє з</Label>
-            <Input
-              type="date"
-              value={effectiveFrom}
-              onChange={e => setEffectiveFrom(e.target.value)}
-            />
+            <DatePicker value={effectiveFrom} onChange={setEffectiveFrom} />
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Скасувати</Button>

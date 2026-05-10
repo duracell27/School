@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
@@ -20,6 +20,7 @@ import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { SUBJECTS } from '@/lib/subjects';
 import type { LessonPrice, Subject } from '@/types/lesson';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const schema = z.object({
   price: z.coerce.number().positive('Вкажіть ціну'),
@@ -76,7 +77,7 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
     return map;
   }, [allPrices, teacherId]);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } =
     useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
 
   useEffect(() => {
@@ -188,8 +189,10 @@ export function LessonPriceModal({ open, onClose, price }: LessonPriceModalProps
               {errors.price && <p className="text-sm text-red-500">{errors.price.message}</p>}
             </div>
             <div className="space-y-1">
-              <Label htmlFor="lp-date">Діє з</Label>
-              <Input id="lp-date" type="date" {...register('effectiveDate')} />
+              <Label>Діє з</Label>
+              <Controller control={control} name="effectiveDate" render={({ field }) => (
+                <DatePicker value={field.value ?? ''} onChange={field.onChange} />
+              )} />
               {errors.effectiveDate && <p className="text-sm text-red-500">{errors.effectiveDate.message}</p>}
             </div>
           </div>
