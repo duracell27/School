@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { format, parse, isValid } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { CalendarIcon, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -35,19 +35,17 @@ export function DatePicker({ value, onChange, placeholder = 'Виберіть д
   return (
     <div className={cn('flex items-center gap-1', className)}>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              'flex-1 justify-start text-left font-normal',
-              !isValidDate && 'text-muted-foreground',
-            )}
-          >
-            <CalendarIcon size={14} className="mr-2 shrink-0" />
-            <span className="flex-1 truncate">
-              {isValidDate ? format(selected, 'd MMM yyyy', { locale: uk }) : placeholder}
-            </span>
-          </Button>
+        <PopoverTrigger
+          className={cn(
+            buttonVariants({ variant: 'outline' }),
+            'flex-1 justify-start text-left font-normal',
+            !isValidDate && 'text-muted-foreground',
+          )}
+        >
+          <CalendarIcon size={14} className="mr-2 shrink-0" />
+          <span className="flex-1 truncate">
+            {isValidDate ? format(selected, 'd MMM yyyy', { locale: uk }) : placeholder}
+          </span>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
