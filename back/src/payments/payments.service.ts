@@ -18,7 +18,12 @@ export function computeAllocation(
   lessons: Array<{ id: string; price: number; status: 'CONDUCTED' | 'PLANNED' }>,
 ): AllocationRecord[] {
   const records: AllocationRecord[] = [];
-  const queue = lessons.map(l => ({ id: l.id, status: l.status, remaining: l.price }));
+  const queue = [...lessons]
+    .sort((a, b) => {
+      if (a.status === b.status) return 0;
+      return a.status === 'CONDUCTED' ? -1 : 1;
+    })
+    .map(l => ({ id: l.id, status: l.status, remaining: l.price }));
   let qi = 0;
 
   for (const payment of payments) {
@@ -74,9 +79,101 @@ export class PaymentsService {
     return Number(result._sum.amount ?? 0);
   }
 
-  async reallocate(childId: string, teacherId: string): Promise<void> {
-    // Fetch all read-only data before the transaction to avoid async queries inside a loop
-    // within a single pg client (interactive transaction), which triggers pg deprecation warnings.
+  async getFinancialSummary() {
+    const childSubjects = await this.prisma.childSubject.findMany({
+      select: { childId: true, teacherId: true },
+    });
+
+    const pairKey = (cId: string, tId: string) => `${cId}:${tId}`;
+    const pairSet = new Map<string, { childId: string; teacherId: string }>();
+    for (const cs of childSubjects) {
+      const key = pairKey(cs.childId, cs.teacherId);
+      if (!pairSet.has(key)) pairSet.set(key, { childId: cs.childId, teacherId: cs.teacherId });
+    }
+
+    const pairs = Array.from(pairSet.values());
+    const childIds = [...new Set(pairs.map(p => p.childId))];
+
+    const [schoolBalanceResult, teacherEarningsResult, payments, lessons] = await Promise.all([
+      this.prisma.schoolTransaction.aggregate({ _sum: { amount: true } }),
+      this.prisma.teacherEarning.aggregate({ _sum: { amount: true } }),
+      childIds.length > 0
+        ? this.prisma.payment.findMany({
+            where: { childId: { in: childIds } },
+            orderBy: { date: 'asc' },
+            select: { id: true, childId: true, teacherId: true, amount: true },
+          })
+        : Promise.resolve([]),
+      childIds.length > 0
+        ? this.prisma.lesson.findMany({
+            where: { childId: { in: childIds }, status: { in: ['CONDUCTED', 'PLANNED'] } },
+            orderBy: { startDate: 'asc' },
+            select: { id: true, childId: true, teacherId: true, price: true, status: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const paymentsByPair = new Map<string, Array<{ id: string; amount: number }>>();
+    for (const p of payments) {
+      const key = pairKey(p.childId, p.teacherId);
+      if (!paymentsByPair.has(key)) paymentsByPair.set(key, []);
+      paymentsByPair.get(key)!.push({ id: p.id, amount: Number(p.amount) });
+    }
+
+    const lessonsByPair = new Map<string, Array<{ id: string; price: number; status: 'CONDUCTED' | 'PLANNED' }>>();
+    for (const l of lessons) {
+      const key = pairKey(l.childId, l.teacherId);
+      if (!lessonsByPair.has(key)) lessonsByPair.set(key, []);
+      lessonsByPair.get(key)!.push({ id: l.id, price: Number(l.price), status: l.status as 'CONDUCTED' | 'PLANNED' });
+    }
+
+    const round = (n: number) => Math.round(n * 100) / 100;
+    let totalStudentDebts = 0;
+    let totalStudentAdvances = 0;
+
+    for (const { childId: cId, teacherId: tId } of pairs) {
+      const key = pairKey(cId, tId);
+      const pairPayments = paymentsByPair.get(key) ?? [];
+      const pairLessons = lessonsByPair.get(key) ?? [];
+      const records = computeAllocation(pairPayments, pairLessons);
+
+      const lessonDebt = new Map<string, number>();
+      let debtAllocated = 0;
+      for (const r of records) {
+        if (r.type === 'DEBT') {
+          lessonDebt.set(r.lessonId, (lessonDebt.get(r.lessonId) ?? 0) + r.amount);
+          debtAllocated = round(debtAllocated + r.amount);
+        }
+      }
+
+      for (const lesson of pairLessons) {
+        if (lesson.status === 'CONDUCTED') {
+          const paid = lessonDebt.get(lesson.id) ?? 0;
+          if (paid < lesson.price) {
+            totalStudentDebts = round(totalStudentDebts + lesson.price - paid);
+          }
+        }
+      }
+
+      const totalPaid = pairPayments.reduce((s, p) => round(s + p.amount), 0);
+      totalStudentAdvances = round(totalStudentAdvances + totalPaid - debtAllocated);
+    }
+
+    return {
+      schoolBalance: Number(schoolBalanceResult._sum.amount ?? 0),
+      teacherEarnings: round(Number(teacherEarningsResult._sum.amount ?? 0)),
+      studentDebts: totalStudentDebts,
+      studentAdvances: Math.max(0, totalStudentAdvances),
+    };
+  }
+
+  async reallocate(childId: string, teacherId: string, fullReset = false): Promise<void> {
+    return fullReset
+      ? this.reallocateFull(childId, teacherId)
+      : this.reallocateIncremental(childId, teacherId);
+  }
+
+  private async reallocateFull(childId: string, teacherId: string): Promise<void> {
     const [payments, lessons, allPairLessons] = await Promise.all([
       this.prisma.payment.findMany({
         where: { childId, teacherId },
@@ -104,7 +201,6 @@ export class PaymentsService {
         )
       : [];
 
-    // Pre-fetch commissions for all unique lesson dates (DEBT records only)
     const dateKeyToDate = new Map<string, Date>();
     for (const r of records) {
       if (r.type !== 'DEBT') continue;
@@ -126,7 +222,6 @@ export class PaymentsService {
     );
     const commissionCache = new Map(commissionEntries);
 
-    // Transaction contains only writes — no async lookups inside loops
     await this.prisma.$transaction(async (tx) => {
       if (allPairLessonIds.length > 0) {
         await tx.schoolTransaction.deleteMany({
@@ -205,6 +300,155 @@ export class PaymentsService {
     });
   }
 
+  private async reallocateIncremental(childId: string, teacherId: string): Promise<void> {
+    const round = (n: number) => Math.round(n * 100) / 100;
+
+    const [payments, conductedLessons, plannedLessons] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: { childId, teacherId },
+        orderBy: { date: 'asc' },
+        select: { id: true, amount: true },
+      }),
+      this.prisma.lesson.findMany({
+        where: { childId, teacherId, status: 'CONDUCTED' },
+        orderBy: { startDate: 'asc' },
+        select: { id: true, price: true, startDate: true },
+      }),
+      this.prisma.lesson.findMany({
+        where: { childId, teacherId, status: 'PLANNED' },
+        orderBy: { startDate: 'asc' },
+        select: { id: true, price: true },
+      }),
+    ]);
+
+    // Find the settlement boundary using existing PaymentLesson DEBT records
+    const conductedIds = conductedLessons.map(l => l.id);
+    const existingDebts = conductedIds.length > 0
+      ? await this.prisma.paymentLesson.findMany({
+          where: { lessonId: { in: conductedIds }, type: PaymentLessonType.DEBT },
+          select: { lessonId: true, amount: true },
+        })
+      : [];
+
+    const debtByLesson = new Map<string, number>();
+    for (const d of existingDebts) {
+      debtByLesson.set(d.lessonId, round((debtByLesson.get(d.lessonId) ?? 0) + Number(d.amount)));
+    }
+
+    // Walk conducted lessons in date order; find first that isn't fully paid
+    let settledTotal = 0;
+    const settledIds = new Set<string>();
+    for (const lesson of conductedLessons) {
+      const paid = debtByLesson.get(lesson.id) ?? 0;
+      if (paid < Number(lesson.price) - 0.001) break;
+      settledTotal = round(settledTotal + Number(lesson.price));
+      settledIds.add(lesson.id);
+    }
+
+    const unsettledConducted = conductedLessons.filter(l => !settledIds.has(l.id));
+    const lessonIds = [
+      ...unsettledConducted.map(l => l.id),
+      ...plannedLessons.map(l => l.id),
+    ];
+
+    // Determine remaining payments after subtracting settled total
+    let remaining = settledTotal;
+    const remainingPayments: Array<{ id: string; amount: number }> = [];
+    for (const p of payments) {
+      const amt = Number(p.amount);
+      if (remaining <= 0) {
+        remainingPayments.push({ id: p.id, amount: amt });
+      } else if (amt <= remaining + 0.001) {
+        remaining = round(remaining - amt);
+      } else {
+        remainingPayments.push({ id: p.id, amount: round(amt - remaining) });
+        remaining = 0;
+      }
+    }
+
+    const lessonsToAllocate = [
+      ...unsettledConducted.map(l => ({ id: l.id, price: Number(l.price), status: 'CONDUCTED' as const })),
+      ...plannedLessons.map(l => ({ id: l.id, price: Number(l.price), status: 'PLANNED' as const })),
+    ];
+
+    const records = remainingPayments.length > 0 && lessonsToAllocate.length > 0
+      ? computeAllocation(remainingPayments, lessonsToAllocate)
+      : [];
+
+    const lessonDateMap = new Map(unsettledConducted.map(l => [l.id, l.startDate]));
+    const dateKeyToDate = new Map<string, Date>();
+    for (const l of unsettledConducted) {
+      const dk = l.startDate.toISOString().slice(0, 10);
+      if (!dateKeyToDate.has(dk)) dateKeyToDate.set(dk, l.startDate);
+    }
+
+    const commissionEntries = await Promise.all(
+      [...dateKeyToDate.entries()].map(async ([dk, startDate]) => {
+        const commission = await this.prisma.teacherCommission.findFirst({
+          where: { teacherId, effectiveFrom: { lte: startDate } },
+          orderBy: { effectiveFrom: 'desc' },
+          select: { percentage: true },
+        });
+        return [dk, commission ? Number(commission.percentage) : null] as const;
+      }),
+    );
+    const commissionCache = new Map(commissionEntries);
+
+    await this.prisma.$transaction(async (tx) => {
+      if (lessonIds.length > 0) {
+        await tx.schoolTransaction.deleteMany({
+          where: { lessonId: { in: lessonIds }, reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE },
+        });
+        await tx.paymentLesson.deleteMany({
+          where: { lessonId: { in: lessonIds } },
+        });
+      }
+
+      if (records.length === 0) return;
+
+      const createdPLs = await tx.paymentLesson.createManyAndReturn({
+        data: records.map(r => ({
+          paymentId: r.paymentId,
+          lessonId: r.lessonId,
+          amount: r.amount,
+          type: r.type as PaymentLessonType,
+        })),
+        select: { id: true, lessonId: true, amount: true, type: true },
+      });
+
+      const debtPLs = createdPLs.filter(pl => pl.type === 'DEBT');
+      if (debtPLs.length === 0) return;
+
+      const earningsData: Array<{
+        teacherId: string; lessonId: string; paymentLessonId: string;
+        amount: Prisma.Decimal; percentage: Prisma.Decimal;
+      }> = [];
+      const schoolTxData: Array<{ amount: Prisma.Decimal; reason: SchoolTransactionReason; lessonId: string }> = [];
+
+      for (const pl of debtPLs) {
+        const startDate = lessonDateMap.get(pl.lessonId);
+        if (!startDate) continue;
+        const dk = startDate.toISOString().slice(0, 10);
+        const pct = commissionCache.get(dk);
+        if (pct == null) continue;
+        const teacherAmt = Math.round(Number(pl.amount) * pct) / 100;
+        const schoolAmt = Number(pl.amount);
+        if (teacherAmt > 0) earningsData.push({
+          teacherId, lessonId: pl.lessonId, paymentLessonId: pl.id,
+          amount: new Prisma.Decimal(teacherAmt), percentage: new Prisma.Decimal(pct),
+        });
+        if (schoolAmt > 0) schoolTxData.push({
+          amount: new Prisma.Decimal(schoolAmt),
+          reason: SchoolTransactionReason.LESSON_SCHOOL_SHARE,
+          lessonId: pl.lessonId,
+        });
+      }
+
+      if (earningsData.length > 0) await tx.teacherEarning.createMany({ data: earningsData });
+      if (schoolTxData.length > 0) await tx.schoolTransaction.createMany({ data: schoolTxData });
+    });
+  }
+
   async create(dto: CreatePaymentDto, adminId: string) {
     const payment = await this.prisma.payment.create({
       data: {
@@ -264,11 +508,16 @@ export class PaymentsService {
       }),
     ]);
 
-    const queue = lessons.map(l => ({
-      id: l.id,
-      status: l.status as 'CONDUCTED' | 'PLANNED',
-      remaining: Number(l.price),
-    }));
+    const queue = [...lessons]
+      .sort((a, b) => {
+        if (a.status === b.status) return 0;
+        return a.status === 'CONDUCTED' ? -1 : 1;
+      })
+      .map(l => ({
+        id: l.id,
+        status: l.status as 'CONDUCTED' | 'PLANNED',
+        remaining: Number(l.price),
+      }));
 
     let qi = 0;
     for (const payment of payments) {
@@ -348,14 +597,14 @@ export class PaymentsService {
       },
       select: paymentSelect,
     });
-    await this.reallocate(existing.child.id, existing.teacher.id);
+    await this.reallocate(existing.child.id, existing.teacher.id, true);
     return payment;
   }
 
   async remove(id: string): Promise<void> {
     const existing = await this.findOne(id);
     await this.prisma.payment.delete({ where: { id } });
-    await this.reallocate(existing.child.id, existing.teacher.id);
+    await this.reallocate(existing.child.id, existing.teacher.id, true);
   }
 
   async getSchoolAccountInfo() {

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './api';
 import type {
   Payment, CreatePaymentPayload, UpdatePaymentPayload,
-  AllocationPreview, SchoolAccountInfo,
+  AllocationPreview, SchoolAccountInfo, FinancialSummary,
 } from '@/types/payment';
 import type { Paginated } from './lessons';
 
@@ -24,6 +24,13 @@ export function useSchoolAccount() {
   return useQuery({
     queryKey: ['payments', 'school-balance'],
     queryFn: () => apiFetch<SchoolAccountInfo>('/payments/school-balance'),
+  });
+}
+
+export function useFinancialSummary() {
+  return useQuery({
+    queryKey: ['payments', 'financial-summary'],
+    queryFn: () => apiFetch<FinancialSummary>('/payments/financial-summary'),
   });
 }
 
@@ -51,6 +58,7 @@ export function usePaymentPreview(params: {
 function invalidatePaymentRelated(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ['payments'] });
   queryClient.invalidateQueries({ queryKey: ['payments', 'school-balance'] });
+  queryClient.invalidateQueries({ queryKey: ['payments', 'financial-summary'] });
   queryClient.invalidateQueries({ queryKey: ['lessons'] });
   queryClient.invalidateQueries({ queryKey: ['child-balances'] });
 }

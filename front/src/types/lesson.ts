@@ -49,6 +49,7 @@ export interface Lesson {
   originalEndDate: string | null;
   note: { id: string } | null;
   paymentStatus?: PaymentStatus;
+  paidAmount?: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -38,13 +38,24 @@ function computePaymentStatus(lesson: {
   paymentLessons: Array<{ amount: unknown; type: string }>;
 }): 'PAID' | 'UNPAID' | 'PREPAID' | null {
   if (lesson.status === 'CONDUCTED') {
-    const covered = lesson.paymentLessons.reduce((sum, pl) => sum + Number(pl.amount), 0);
+    const covered = lesson.paymentLessons.filter(pl => pl.type === 'DEBT').reduce((sum, pl) => sum + Number(pl.amount), 0);
     return covered >= Number(lesson.price) ? 'PAID' : 'UNPAID';
   }
   if (lesson.status === 'PLANNED') {
     return lesson.paymentLessons.some(pl => pl.type === 'PREPAID') ? 'PREPAID' : null;
   }
   return null;
+}
+
+function computePaidAmount(lesson: {
+  status: string;
+  paymentLessons: Array<{ amount: unknown; type: string }>;
+}): number | undefined {
+  if (lesson.status !== 'CONDUCTED') return undefined;
+  const paid = lesson.paymentLessons
+    .filter(pl => pl.type === 'DEBT')
+    .reduce((sum, pl) => sum + Number(pl.amount), 0);
+  return Math.round(paid * 100) / 100;
 }
 
 @Injectable()
@@ -91,6 +102,7 @@ export class LessonsService {
         const data = lessons.map(l => ({
           ...l,
           paymentStatus: computePaymentStatus(l),
+          paidAmount: computePaidAmount(l),
           paymentLessons: undefined,
         }));
         return { data, total, page: page ?? 1, totalPages: Math.ceil(total / limit!) };
@@ -103,6 +115,7 @@ export class LessonsService {
         lessons.map(l => ({
           ...l,
           paymentStatus: computePaymentStatus(l),
+          paidAmount: computePaidAmount(l),
           paymentLessons: undefined,
         }))
       );
@@ -331,7 +344,7 @@ export class LessonsService {
       },
       select: lessonSelectBase,
     });
-    await this.payments.reallocate(lesson.child.id, lesson.teacher.id);
+    await this.payments.reallocate(lesson.child.id, lesson.teacher.id, true);
     return updated;
   }
 
@@ -416,6 +429,6 @@ export class LessonsService {
     }
 
     await this.prisma.lesson.delete({ where: { id } });
-    await this.payments.reallocate(lesson.child.id, lesson.teacher.id);
+    await this.payments.reallocate(lesson.child.id, lesson.teacher.id, true);
   }
 }

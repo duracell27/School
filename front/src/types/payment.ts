@@ -49,11 +49,18 @@ export interface SchoolTransaction {
   amount: string;
   reason: SchoolTransactionReason;
   note: string | null;
-  admin: { id: string; name: string };
+  admin: { id: string; name: string } | null;
   createdAt: string;
 }
 
 export interface SchoolAccountInfo {
   balance: number;
   transactions: SchoolTransaction[];
+}
+
+export interface FinancialSummary {
+  schoolBalance: number;
+  teacherEarnings: number;
+  studentAdvances: number;
+  studentDebts: number;
 }

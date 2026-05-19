@@ -46,6 +46,23 @@ const PAYMENT_STATUS_COLORS: Record<NonNullable<PaymentStatus>, string> = {
   PREPAID: 'bg-blue-100 text-blue-700',
 };
 
+function PaymentBadge({ paymentStatus, paidAmount, className }: {
+  paymentStatus: NonNullable<PaymentStatus>;
+  paidAmount?: number;
+  className?: string;
+}) {
+  const isPartial = paymentStatus === 'UNPAID' && paidAmount != null && paidAmount > 0;
+  const label = isPartial
+    ? `Частково: ${paidAmount.toLocaleString('uk-UA')} грн`
+    : PAYMENT_STATUS_LABELS[paymentStatus];
+  const color = isPartial ? 'bg-orange-100 text-orange-700' : PAYMENT_STATUS_COLORS[paymentStatus];
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color} ${className ?? ''}`}>
+      {label}
+    </span>
+  );
+}
+
 const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESCHEDULED'];
 
 function StatusSelect({
@@ -217,9 +234,11 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                   </span>
                 )}
                 {lesson.paymentStatus && (
-                  <span className={`flex-1 text-center text-[10px] font-medium px-1.5 py-0.5 rounded-full whitespace-nowrap ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
-                    {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
-                  </span>
+                  <PaymentBadge
+                    paymentStatus={lesson.paymentStatus}
+                    paidAmount={lesson.paidAmount}
+                    className="flex-1 text-center text-[10px]"
+                  />
                 )}
               </div>
             </div>
@@ -275,9 +294,10 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 {isAdmin && (
                   <TableCell>
                     {lesson.paymentStatus ? (
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PAYMENT_STATUS_COLORS[lesson.paymentStatus]}`}>
-                        {PAYMENT_STATUS_LABELS[lesson.paymentStatus]}
-                      </span>
+                      <PaymentBadge
+                        paymentStatus={lesson.paymentStatus}
+                        paidAmount={lesson.paidAmount}
+                      />
                     ) : null}
                   </TableCell>
                 )}

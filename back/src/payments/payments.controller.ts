@@ -28,6 +28,11 @@ export class PaymentsController {
     return this.payments.getSchoolAccountInfo();
   }
 
+  @Get('financial-summary')
+  getFinancialSummary() {
+    return this.payments.getFinancialSummary();
+  }
+
   @Get('preview')
   preview(@Query() dto: PreviewPaymentDto) {
     return this.payments.previewAllocation(dto);
