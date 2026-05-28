@@ -3,7 +3,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { useUpdateLesson, useDeleteLesson, useCreateLesson } from '@/lib/lessons';
 import { LessonNoteModal } from '@/components/lessons/lesson-note-modal';
-import type { Lesson } from '@/types/lesson';
+import { CancellationModal } from '@/components/lessons/cancellation-modal';
+import type { CancellationSide, Lesson } from '@/types/lesson';
 
 interface LessonActionsPopoverProps {
   lesson: Lesson;
@@ -20,17 +21,18 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
   const deleteLesson = useDeleteLesson();
   const createLesson = useCreateLesson();
   const [noteModal, setNoteModal] = useState<'create' | 'view' | null>(null);
+  const [cancellationModal, setCancellationModal] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (noteModal) return;
+      if (noteModal || cancellationModal) return;
       if (ref.current && !ref.current.contains(e.target as Node)) {
         onClose();
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose, noteModal]);
+  }, [onClose, noteModal, cancellationModal]);
 
   const spaceBelow = window.innerHeight - anchorRect.bottom;
   const showAbove = spaceBelow < POPOVER_HEIGHT;
@@ -49,8 +51,12 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
     onClose();
   }
 
-  async function cancelLesson() {
-    await updateLesson.mutateAsync({ id: lesson.id, data: { status: 'CANCELLED' } });
+  async function cancelLesson(side: CancellationSide, reason: string) {
+    await updateLesson.mutateAsync({
+      id: lesson.id,
+      data: { status: 'CANCELLED', cancellationSide: side, cancellationReason: reason },
+    });
+    setCancellationModal(false);
     onClose();
   }
 
@@ -84,18 +90,18 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
         style={{ top, left }}
       >
         {lesson.status !== 'CONDUCTED' && (
-          <ActionBtn onClick={markConducted} disabled={busy}>✅ Позначити проведеним</ActionBtn>
+          <ActionBtn onClick={markConducted} disabled={busy}>✅ Проведено</ActionBtn>
         )}
         {lesson.status === 'CONDUCTED' && lesson.note && (
-          <ActionBtn onClick={() => setNoteModal('view')} disabled={false}>📋 Переглянути нотатку</ActionBtn>
+          <ActionBtn onClick={() => setNoteModal('view')} disabled={false}>📋 Нотатка</ActionBtn>
         )}
         <ActionBtn onClick={() => { onEdit(lesson); onClose(); }} disabled={false}>✏️ Редагувати</ActionBtn>
         {lesson.status !== 'CONDUCTED' && (
           <ActionBtn onClick={() => { onEdit(lesson); onClose(); }} disabled={false}>📅 Перенести</ActionBtn>
         )}
         <ActionBtn onClick={duplicateNextWeek} disabled={busy}>📋 Повторити наступного тижня</ActionBtn>
+        <ActionBtn onClick={() => setCancellationModal(true)} disabled={busy} className="text-orange-600">❌ Скасувати</ActionBtn>
         <div className="border-t border-gray-100 my-1" />
-        <ActionBtn onClick={cancelLesson} disabled={busy} className="text-orange-600">❌ Скасувати</ActionBtn>
         <ActionBtn onClick={removeLesson} disabled={busy} className="text-red-600">🗑️ Видалити</ActionBtn>
       </div>
 
@@ -116,6 +122,11 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
           mode="view"
         />
       )}
+      <CancellationModal
+        open={cancellationModal}
+        onClose={() => setCancellationModal(false)}
+        onConfirm={cancelLesson}
+      />
     </>
   );
 }

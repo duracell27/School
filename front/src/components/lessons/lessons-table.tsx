@@ -4,6 +4,9 @@ import { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown, ArrowUp, ArrowDown, FileText } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
@@ -12,7 +15,7 @@ import { getCountry } from '@/lib/countries';
 import { useUpdateLesson } from '@/lib/lessons';
 import { useSessionStore } from '@/store/session.store';
 import { LessonNoteModal } from './lesson-note-modal';
-import type { Lesson, LessonStatus, PaymentStatus } from '@/types/lesson';
+import type { CancellationSide, Lesson, LessonStatus, PaymentStatus } from '@/types/lesson';
 
 interface LessonsTableProps {
   lessons: Lesson[];
@@ -138,6 +141,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [noteModal, setNoteModal] = useState<{ lessonId: string; mode: 'create' | 'view' } | null>(null);
   const [pendingConducted, setPendingConducted] = useState<Lesson | null>(null);
+  const [cancellationInfo, setCancellationInfo] = useState<{ side: CancellationSide | null; reason: string | null } | null>(null);
   const currentUser = useSessionStore((s) => s.user);
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
   const updateLesson = useUpdateLesson();
@@ -210,6 +214,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                       size="sm" variant="outline"
                       className="h-7 px-2 text-xs"
                       onClick={() => setNoteModal({ lessonId: lesson.id, mode: 'view' })}
+                    >
+                      <FileText size={12} />
+                    </Button>
+                  )}
+                  {lesson.status === 'CANCELLED' && (lesson.cancellationSide || lesson.cancellationReason) && (
+                    <Button
+                      size="sm" variant="outline"
+                      className="h-7 px-2 text-xs text-orange-600 border-orange-200"
+                      onClick={() => setCancellationInfo({ side: lesson.cancellationSide ?? null, reason: lesson.cancellationReason ?? null })}
                     >
                       <FileText size={12} />
                     </Button>
@@ -326,6 +339,15 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                       <FileText size={14} className="mr-1" /> Нотатка
                     </Button>
                   )}
+                  {lesson.status === 'CANCELLED' && (lesson.cancellationSide || lesson.cancellationReason) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCancellationInfo({ side: lesson.cancellationSide ?? null, reason: lesson.cancellationReason ?? null })}
+                    >
+                      <FileText size={14} className="mr-1" /> Причина
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={() => onEdit(lesson)}>Редагувати</Button>
                   <Button variant="destructive" size="sm" onClick={() => onDelete(lesson)}>Видалити</Button>
                 </TableCell>
@@ -348,6 +370,35 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           mode={noteModal.mode}
           onSaved={noteModal.mode === 'create' ? handleNoteSaved : undefined}
         />
+      )}
+
+      {cancellationInfo && (
+        <Dialog open onOpenChange={(o) => !o && setCancellationInfo(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Причина скасування</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              {cancellationInfo.side && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Сторона</p>
+                  <p className="text-sm font-medium">
+                    {cancellationInfo.side === 'STUDENT' ? 'Учень' : 'Вчитель'}
+                  </p>
+                </div>
+              )}
+              {cancellationInfo.reason && (
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Причина</p>
+                  <p className="text-sm whitespace-pre-wrap">{cancellationInfo.reason}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCancellationInfo(null)}>Закрити</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );

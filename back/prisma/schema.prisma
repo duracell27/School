@@ -29,6 +29,11 @@ enum LessonStatus {
   RESCHEDULED
 }
 
+enum CancellationSide {
+  STUDENT
+  TEACHER
+}
+
 model User {
   id                 String              @id @default(cuid())
   email              String              @unique
@@ -91,6 +96,8 @@ model Lesson {
   teacherEarnings    TeacherEarning[]
   schoolTransactions SchoolTransaction[]
   note               LessonNote?
+  cancellationSide   CancellationSide?
+  cancellationReason String?             @db.Text
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 

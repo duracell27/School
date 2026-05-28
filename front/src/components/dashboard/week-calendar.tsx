@@ -173,7 +173,12 @@ function DraggableLessonCard({ lesson, pos, onLessonClick }: DraggableLessonCard
     >
       <div className="flex items-center gap-1 min-w-0">
         <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={14} />
-        <span className="text-[11px] font-semibold truncate leading-tight">{lesson.child.name}</span>
+        <span className="text-[11px] font-semibold truncate leading-tight flex-1">{lesson.child.name}</span>
+        {lesson.paymentStatus === 'PAID' || lesson.paymentStatus === 'PREPAID' ? (
+          <span className="text-[10px] leading-none shrink-0">💰</span>
+        ) : lesson.paymentStatus === 'UNPAID' ? (
+          <span className="text-[10px] leading-none shrink-0">🔴</span>
+        ) : null}
       </div>
 
       <div className="text-[10px] opacity-70 leading-tight truncate">

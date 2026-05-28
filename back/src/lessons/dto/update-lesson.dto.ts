@@ -3,7 +3,7 @@ import {
   IsDateString, IsEnum, IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { LessonStatus } from '@prisma/client';
+import { LessonStatus, CancellationSide } from '@prisma/client';
 
 export class UpdateLessonDto {
   @IsString()
@@ -39,4 +39,12 @@ export class UpdateLessonDto {
   @IsDateString()
   @IsOptional()
   originalEndDate?: string;
+
+  @IsEnum(CancellationSide)
+  @IsOptional()
+  cancellationSide?: CancellationSide;
+
+  @IsString()
+  @IsOptional()
+  cancellationReason?: string;
 }

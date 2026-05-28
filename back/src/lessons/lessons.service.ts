@@ -21,6 +21,8 @@ const lessonSelectBase = {
   originalStartDate: true,
   originalEndDate: true,
   note: { select: { id: true } },
+  cancellationSide: true,
+  cancellationReason: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.LessonSelect;

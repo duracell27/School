@@ -21,7 +21,9 @@ import { useChildren } from '@/lib/children';
 import { useUsers } from '@/lib/users';
 import { useSessionStore } from '@/store/session.store';
 import { SUBJECTS } from '@/lib/subjects';
-import type { Lesson, LessonStatus, Subject } from '@/types/lesson';
+import { LessonNoteModal } from '@/components/lessons/lesson-note-modal';
+import { CancellationModal } from '@/components/lessons/cancellation-modal';
+import type { CancellationSide, Lesson, LessonStatus, Subject } from '@/types/lesson';
 
 const STATUSES: { value: LessonStatus; label: string }[] = [
   { value: 'PLANNED', label: 'Заплановано' },
@@ -65,6 +67,8 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
   const [status, setStatus] = useState<LessonStatus>('PLANNED');
   const [subject, setSubject] = useState<Subject | ''>('');
   const [startDateVal, setStartDateVal] = useState('');
+  const [noteModalLessonId, setNoteModalLessonId] = useState<string | null>(null);
+  const [cancellationLessonId, setCancellationLessonId] = useState<string | null>(null);
 
   const currentUser = useSessionStore((s) => s.user);
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
@@ -162,9 +166,25 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
           ? { originalEndDate: new Date(data.originalEndDate).toISOString() } : {}),
       };
       if (isEdit) {
-        await updateLesson.mutateAsync({ id: lesson.id, data: payload });
+        const updated = await updateLesson.mutateAsync({ id: lesson.id, data: payload });
+        if (status === 'CONDUCTED' && lesson?.status !== 'CONDUCTED') {
+          setNoteModalLessonId(updated.id);
+          return;
+        }
+        if (status === 'CANCELLED' && lesson?.status !== 'CANCELLED') {
+          setCancellationLessonId(updated.id);
+          return;
+        }
       } else {
-        await createLesson.mutateAsync(payload);
+        const created = await createLesson.mutateAsync(payload);
+        if (status === 'CONDUCTED') {
+          setNoteModalLessonId(created.id);
+          return;
+        }
+        if (status === 'CANCELLED') {
+          setCancellationLessonId(created.id);
+          return;
+        }
       }
       onClose();
       onSaved?.(status, lesson?.status);
@@ -183,7 +203,36 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
     setValue('endDate', end, { shouldValidate: true });
   }
 
+  function handleNoteSavedFromModal() {
+    setNoteModalLessonId(null);
+    onClose();
+    onSaved?.(status, lesson?.status);
+  }
+
+  async function handleCancellationConfirmed(side: CancellationSide, reason: string) {
+    if (!cancellationLessonId) return;
+    await updateLesson.mutateAsync({ id: cancellationLessonId, data: { cancellationSide: side, cancellationReason: reason } });
+    setCancellationLessonId(null);
+    onClose();
+    onSaved?.(status, lesson?.status);
+  }
+
   return (
+    <>
+    {noteModalLessonId && (
+      <LessonNoteModal
+        open={true}
+        onClose={() => { setNoteModalLessonId(null); onClose(); onSaved?.(status, lesson?.status); }}
+        lessonId={noteModalLessonId}
+        mode="create"
+        onSaved={handleNoteSavedFromModal}
+      />
+    )}
+    <CancellationModal
+      open={!!cancellationLessonId}
+      onClose={() => { setCancellationLessonId(null); onClose(); onSaved?.(status, lesson?.status); }}
+      onConfirm={handleCancellationConfirmed}
+    />
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -304,5 +353,6 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { Eye, EyeOff } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { getCountry } from '@/lib/countries';
 import { subjectEmoji } from '@/lib/subjects';
@@ -13,7 +14,7 @@ const STATUS_DOT: Record<string, string> = {
   CONDUCTED: 'bg-green-500',
   PLANNED: 'bg-blue-500',
   RESCHEDULED: 'bg-amber-400',
-  CANCELLED: 'bg-gray-300',
+  CANCELLED: 'bg-red-400',
 };
 
 const STATUS_TITLE: Record<string, string> = {
@@ -26,9 +27,11 @@ const STATUS_TITLE: Record<string, string> = {
 interface DraggableChildProps {
   child: Child;
   weekStatuses: string[];
+  hidden: boolean;
+  onToggleVisibility: () => void;
 }
 
-function DraggableChild({ child, weekStatuses }: DraggableChildProps) {
+function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility }: DraggableChildProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `child-${child.id}`,
     data: { type: 'child', child },
@@ -44,9 +47,9 @@ function DraggableChild({ child, weekStatuses }: DraggableChildProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-grab hover:bg-gray-50 transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-grab hover:bg-gray-50 transition-colors ${
         isDragging ? 'opacity-40' : ''
-      }`}
+      } ${hidden ? 'opacity-50' : ''}`}
       {...listeners}
       {...attributes}
     >
@@ -71,6 +74,17 @@ function DraggableChild({ child, weekStatuses }: DraggableChildProps) {
           </div>
         )}
       </div>
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onToggleVisibility(); }}
+        className="shrink-0 p-0.5 rounded text-gray-400 hover:text-gray-600 transition-colors"
+        title={hidden ? 'Показати уроки' : 'Сховати уроки'}
+      >
+        {hidden
+          ? <EyeOff size={14} />
+          : <Eye size={14} />
+        }
+      </button>
     </div>
   );
 }
@@ -80,10 +94,14 @@ interface ChildrenSidebarProps {
   lessons: Lesson[];
   duration: 55 | 30;
   onDurationChange: (d: 55 | 30) => void;
+  hiddenChildIds: Set<string>;
+  onToggleChild: (childId: string) => void;
+  onToggleAll: () => void;
 }
 
-export function ChildrenSidebar({ childList, lessons, duration, onDurationChange }: ChildrenSidebarProps) {
+export function ChildrenSidebar({ childList, lessons, duration, onDurationChange, hiddenChildIds, onToggleChild, onToggleAll }: ChildrenSidebarProps) {
   const [search, setSearch] = useState('');
+  const allHidden = childList.length > 0 && hiddenChildIds.size >= childList.length;
 
   const childWeekStatuses = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -123,14 +141,23 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
         </button>
       </div>
 
-      {/* Search */}
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Пошук..."
-        className="w-full text-xs px-2 py-1 rounded border border-gray-200 outline-none focus:border-blue-400 bg-white"
-      />
+      {/* Search + global visibility toggle */}
+      <div className="flex items-center gap-1">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Пошук..."
+          className="flex-1 min-w-0 text-xs px-2 py-1 rounded border border-gray-200 outline-none focus:border-blue-400 bg-white"
+        />
+        <button
+          onClick={onToggleAll}
+          className="shrink-0 p-1 rounded border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+          title={allHidden ? 'Показати всіх' : 'Сховати всіх'}
+        >
+          {allHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+      </div>
 
       {/* Children list */}
       <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">
@@ -142,6 +169,8 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
               key={child.id}
               child={child}
               weekStatuses={childWeekStatuses.get(child.id) ?? []}
+              hidden={hiddenChildIds.has(child.id)}
+              onToggleVisibility={() => onToggleChild(child.id)}
             />
           ))
         )}

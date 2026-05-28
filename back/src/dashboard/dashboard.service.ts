@@ -127,7 +127,7 @@ export class DashboardService {
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
-    const [conducted, conductedDurations, planned, prevConducted, payouts, cancelled] = await Promise.all([
+    const [conducted, conductedDurations, planned, prevConducted, payouts, cancelled, cancellationSides] = await Promise.all([
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
@@ -155,6 +155,11 @@ export class DashboardService {
         where: { ...teacherFilter, status: 'CANCELLED', startDate: { gte: start, lt: end } },
         _count: { id: true },
       }),
+      this.prisma.lesson.groupBy({
+        by: ['cancellationSide'],
+        where: { ...teacherFilter, status: 'CANCELLED', startDate: { gte: start, lt: end }, cancellationSide: { not: null } },
+        _count: { id: true },
+      }),
     ]);
 
     const earned = Number(conducted._sum.price ?? 0);
@@ -170,6 +175,9 @@ export class DashboardService {
       ) * 10
     ) / 10;
 
+    const cancelledByStudent = cancellationSides.find((r) => r.cancellationSide === 'STUDENT')?._count.id ?? 0;
+    const cancelledByTeacher = cancellationSides.find((r) => r.cancellationSide === 'TEACHER')?._count.id ?? 0;
+
     return {
       earned,
       expected,
@@ -177,6 +185,8 @@ export class DashboardService {
       conductedCount: conducted._count.id,
       conductedHours,
       cancelledCount: cancelled._count.id,
+      cancelledByStudent,
+      cancelledByTeacher,
       payoutsTotal,
       netProfit: Math.round((earned - payoutsTotal) * 100) / 100,
     };

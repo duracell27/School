@@ -1,4 +1,5 @@
 export type LessonStatus = 'PLANNED' | 'CONDUCTED' | 'CANCELLED' | 'RESCHEDULED';
+export type CancellationSide = 'STUDENT' | 'TEACHER';
 
 export interface ChildBalance {
   child: { id: string; name: string; avatar: string | null; country: string };
@@ -48,6 +49,8 @@ export interface Lesson {
   originalStartDate: string | null;
   originalEndDate: string | null;
   note: { id: string } | null;
+  cancellationSide?: CancellationSide | null;
+  cancellationReason?: string | null;
   paymentStatus?: PaymentStatus;
   paidAmount?: number;
   createdAt: string;
@@ -76,6 +79,8 @@ export interface UpdateLessonPayload {
   price?: number;
   originalStartDate?: string;
   originalEndDate?: string;
+  cancellationSide?: CancellationSide;
+  cancellationReason?: string;
 }
 
 export interface LessonPrice {

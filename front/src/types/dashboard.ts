@@ -7,6 +7,8 @@ export interface DashboardSummary {
   conductedCount: number;
   conductedHours: number;
   cancelledCount: number;
+  cancelledByStudent: number;
+  cancelledByTeacher: number;
   payoutsTotal: number;
   netProfit: number;
 }

@@ -79,6 +79,7 @@ export default function CalendarPage() {
   const [lessonPopover, setLessonPopover] = useState<LessonPopoverState | null>(null);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [hoverSlot, setHoverSlot] = useState<{ hour: number; minute: number } | null>(null);
+  const [hiddenChildIds, setHiddenChildIds] = useState<Set<string>>(new Set());
   const dragJustEnded = useRef(false);
 
   const { data: users = [] } = useUsers();
@@ -100,6 +101,25 @@ export default function CalendarPage() {
 
   const realWeekStart = getWeekStart(new Date());
   const isFutureWeek = weekStart.getTime() > realWeekStart.getTime();
+
+  function toggleChildVisibility(childId: string) {
+    setHiddenChildIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(childId)) next.delete(childId);
+      else next.add(childId);
+      return next;
+    });
+  }
+
+  function toggleAllVisibility() {
+    if (hiddenChildIds.size < childList.length) {
+      setHiddenChildIds(new Set(childList.map((c) => c.id)));
+    } else {
+      setHiddenChildIds(new Set());
+    }
+  }
+
+  const visibleLessons = lessons.filter((l) => !hiddenChildIds.has(l.child.id));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -131,12 +151,15 @@ export default function CalendarPage() {
   }, []);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    const data = event.over?.data.current as { hour?: number; minute?: number } | undefined;
-    if (data?.hour !== undefined && data?.minute !== undefined) {
-      setHoverSlot({ hour: data.hour, minute: data.minute });
-    } else {
-      setHoverSlot(null);
+    const overId = event.over?.id as string | undefined;
+    if (overId) {
+      const match = overId.match(/^slot-\d{4}-\d{2}-\d{2}-(\d{1,2})-(\d{1,2})$/);
+      if (match) {
+        setHoverSlot({ hour: parseInt(match[1], 10), minute: parseInt(match[2], 10) });
+        return;
+      }
     }
+    setHoverSlot(null);
   }, []);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -258,6 +281,9 @@ export default function CalendarPage() {
               lessons={lessons}
               duration={duration}
               onDurationChange={setDuration}
+              hiddenChildIds={hiddenChildIds}
+              onToggleChild={toggleChildVisibility}
+              onToggleAll={toggleAllVisibility}
             />
           )}
           {isAdmin && !teacherId && (
@@ -272,7 +298,7 @@ export default function CalendarPage() {
               <p className="text-gray-500">Завантаження...</p>
             ) : (
               <WeekCalendar
-                lessons={lessons}
+                lessons={visibleLessons}
                 weekStart={weekStart}
                 onSlotClick={handleSlotClick}
                 onLessonClick={handleLessonClick}
