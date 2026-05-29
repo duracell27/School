@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import {
+  LayoutDashboard, CalendarDays, Users, Baby,
+  BookOpen, Tag, CreditCard, Percent, LogOut,
+} from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 import { useSessionStore } from '@/store/session.store';
 import { useOverdueCount } from '@/lib/lessons';
@@ -17,14 +21,14 @@ interface RefreshResponse {
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Дашборд' },
-  { href: '/calendar', label: 'Календар' },
-  { href: '/users', label: 'Користувачі' },
-  { href: '/children', label: 'Діти' },
-  { href: '/lessons', label: 'Уроки', showBadge: true },
-  { href: '/lesson-prices', label: 'Вартість заняття' },
-  { href: '/payments', label: 'Оплати' },
-  { href: '/commissions', label: 'Комісії' },
+  { href: '/dashboard', label: 'Дашборд', icon: LayoutDashboard },
+  { href: '/calendar', label: 'Календар', icon: CalendarDays },
+  { href: '/users', label: 'Користувачі', icon: Users },
+  { href: '/children', label: 'Діти', icon: Baby },
+  { href: '/lessons', label: 'Уроки', icon: BookOpen, showBadge: true },
+  { href: '/lesson-prices', label: 'Вартість заняття', icon: Tag },
+  { href: '/payments', label: 'Оплати', icon: CreditCard },
+  { href: '/commissions', label: 'Комісії', icon: Percent },
 ];
 
 function NavBadge({ count }: { count: number }) {
@@ -40,8 +44,8 @@ function SidebarSchoolBalance() {
   const { data } = useSchoolAccount();
   if (data == null) return null;
   return (
-    <p className="text-[11px] text-gray-400 mt-0.5">
-      Баланс школи: <span className="font-semibold text-black">{formatCurrency(data.balance)}</span>
+    <p className="text-[11px] text-sidebar-foreground/60 mt-0.5">
+      Баланс школи: <span className="font-semibold text-sidebar-foreground">{formatCurrency(data.balance)}</span>
     </p>
   );
 }
@@ -60,10 +64,11 @@ function NavContent() {
             href={item.href}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               active
-                ? 'bg-gray-100 text-gray-900'
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
             }`}
           >
+            <item.icon size={16} className="shrink-0" />
             {item.label}
             {item.showBadge && <NavBadge count={overdueCount} />}
           </Link>
@@ -104,25 +109,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       <MobileHeader />
-      <aside className="w-56 shrink-0 bg-white border-r flex-col hidden md:flex">
-        <div className="px-5 py-5 border-b">
+      <aside className="w-56 shrink-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border flex-col hidden md:flex">
+        <div className="px-5 py-5 border-b border-sidebar-border">
           <span className="font-semibold text-sm">Teacher Platform</span>
           <SidebarSchoolBalance />
         </div>
         <NavContent />
-        <div className="px-3 py-4 border-t">
+        <div className="px-3 py-4 border-t border-sidebar-border">
           <button
             onClick={async () => {
               await apiFetch('/auth/logout', { method: 'POST' });
               router.replace('/login');
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-300 hover:bg-sidebar-accent hover:text-red-200 transition-colors"
           >
+            <LogOut size={16} className="shrink-0" />
             Вийти
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 p-3 md:p-6 bg-gray-50">{children}</main>
+      <main className="flex-1 min-w-0 p-3 md:p-6 bg-[oklch(0.985_0.005_285)]">{children}</main>
     </div>
   );
 }

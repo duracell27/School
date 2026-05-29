@@ -38,7 +38,7 @@ export default function ChildrenPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <ChildrenTable
           children={children}
           onEdit={(child) => setModal({ open: true, mode: 'edit', child })}

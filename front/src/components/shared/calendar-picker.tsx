@@ -75,7 +75,7 @@ export function CalendarPicker({ value, onChange }: CalendarPickerProps) {
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1 bg-white border border-input rounded-lg shadow-lg p-3 w-60">
+        <div className="absolute z-50 top-full mt-1 bg-popover border border-input rounded-lg shadow-lg p-3 w-60">
           {/* Month navigation */}
           <div className="flex items-center justify-between mb-2">
             <button type="button" onClick={prev} className="p-1 hover:bg-gray-100 rounded transition-colors">
@@ -109,8 +109,8 @@ export function CalendarPicker({ value, onChange }: CalendarPickerProps) {
                   onClick={() => pick(day)}
                   className={[
                     'w-full aspect-square text-xs rounded flex items-center justify-center transition-colors',
-                    isSelected ? 'bg-blue-600 text-white font-semibold' :
-                    isToday ? 'border border-blue-400 text-blue-600 font-semibold hover:bg-blue-50' :
+                    isSelected ? 'bg-primary text-primary-foreground font-semibold' :
+                    isToday ? 'border border-primary/40 text-primary font-semibold hover:bg-accent' :
                     'hover:bg-gray-100',
                   ].join(' ')}
                 >

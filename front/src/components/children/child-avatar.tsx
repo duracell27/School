@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { avatarColor } from '@/lib/avatar-color';
 
 interface ChildAvatarProps {
   name: string;
@@ -33,10 +34,11 @@ export function ChildAvatar({ name, avatar, size = 32 }: ChildAvatarProps) {
     );
   }
 
+  const color = avatarColor(name);
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-blue-100 text-blue-600 font-medium select-none"
-      style={{ ...style, fontSize: size * 0.38 }}
+      className="inline-flex items-center justify-center rounded-full font-medium select-none"
+      style={{ ...style, fontSize: size * 0.38, backgroundColor: color.bg, color: color.text }}
     >
       {initials}
     </span>

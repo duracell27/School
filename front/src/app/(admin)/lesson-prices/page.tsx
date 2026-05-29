@@ -34,7 +34,7 @@ export default function LessonPricesPage() {
         </h2>
         <Button onClick={() => setModal({ open: true, mode: 'create' })}>+ Додати ціну</Button>
       </div>
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <LessonPricesTable
           prices={prices}
           onEdit={(price) => setModal({ open: true, mode: 'edit', price })}

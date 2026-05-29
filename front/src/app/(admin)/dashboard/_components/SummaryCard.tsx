@@ -18,7 +18,7 @@ export function SummaryCard({ title, amount, count, delta, isLoading, subtitles 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {!isReady ? (
@@ -30,7 +30,7 @@ export function SummaryCard({ title, amount, count, delta, isLoading, subtitles 
             </p>
             {delta !== undefined && delta !== null && (
               <div className={`flex items-center gap-1 mt-1 text-xs font-medium ${
-                delta > 0 ? 'text-sky-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'
+                delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-500' : 'text-gray-400'
               }`}>
                 {delta > 0 ? <TrendingUp size={12} /> : delta < 0 ? <TrendingDown size={12} /> : <Minus size={12} />}
                 <span>{delta > 0 ? '+' : ''}{delta}% vs попередній період</span>
@@ -39,9 +39,10 @@ export function SummaryCard({ title, amount, count, delta, isLoading, subtitles 
             {subtitles && subtitles.length > 0 && (
               <div className="mt-1.5 space-y-0.5">
                 {subtitles.map((s) => (
-                  <p key={s.label} className="text-xs text-gray-400">
-                    {s.label}: <span className="font-medium text-gray-600">{s.value}</span>
-                  </p>
+                  <div key={s.label} className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">{s.label}</span>
+                    <span className="font-medium text-gray-600">{s.value}</span>
+                  </div>
                 ))}
               </div>
             )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -40,6 +41,14 @@ const schema = z.object({
   originalEndDate: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
+
+function diffMinutes(start: string, end: string): number | null {
+  if (!start || !end) return null;
+  const s = new Date(start).getTime();
+  const e = new Date(end).getTime();
+  if (Number.isNaN(s) || Number.isNaN(e)) return null;
+  return Math.round((e - s) / 60000);
+}
 
 function toDatetimeLocal(iso: string | null): string {
   if (!iso) return '';
@@ -94,6 +103,8 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
     useForm<FormValues>({ resolver: zodResolver(schema) as Resolver<FormValues> });
 
   const currentStartDate = watch('startDate');
+  const currentEndDate = watch('endDate');
+  const currentDurationMin = diffMinutes(currentStartDate || '', currentEndDate || '');
   useEffect(() => { setStartDateVal(currentStartDate || ''); }, [currentStartDate]);
 
   useEffect(() => {
@@ -118,7 +129,7 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
       setSubject(lesson.subject ?? '');
     } else {
       reset({
-        startDate: defaultStartDate ? toDatetimeLocal(defaultStartDate) : '',
+        startDate: toDatetimeLocal(defaultStartDate ?? new Date().toISOString()),
         endDate: defaultEndDate ? toDatetimeLocal(defaultEndDate) : '',
         price: undefined as never,
         originalStartDate: '',
@@ -209,6 +220,13 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
     onSaved?.(status, lesson?.status);
   }
 
+  const durationBtnClass = (mins: number) =>
+    cn(
+      currentDurationMin === mins
+        ? 'bg-primary/10 text-primary hover:bg-primary/15 border-primary/20'
+        : '',
+    );
+
   async function handleCancellationConfirmed(side: CancellationSide, reason: string) {
     if (!cancellationLessonId) return;
     await updateLesson.mutateAsync({ id: cancellationLessonId, data: { cancellationSide: side, cancellationReason: reason } });
@@ -254,38 +272,40 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
             </div>
           </div>
 
-          <div className="space-y-1">
-            <Label>Статус</Label>
-            <Select value={status} onValueChange={(v) => setStatus((v ?? 'PLANNED') as LessonStatus)}>
-              <SelectTrigger><SelectValue>{STATUSES.find((s) => s.value === status)?.label}</SelectValue></SelectTrigger>
-              <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
-
-          {availableSubjects.length > 0 && (
+          <div className={cn('grid gap-3', availableSubjects.length > 0 ? 'grid-cols-2' : 'grid-cols-1')}>
             <div className="space-y-1">
-              <Label>Предмет</Label>
-              <Select value={subject} onValueChange={(v) => setSubject(v as Subject)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Оберіть предмет">
-                    {subject
-                      ? `${SUBJECTS.find(m => m.value === subject)?.emoji ?? ''} ${SUBJECTS.find(m => m.value === subject)?.label ?? subject}`
-                      : <span className="text-muted-foreground">Оберіть предмет</span>}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {availableSubjects.map((s) => {
-                    const meta = SUBJECTS.find((m) => m.value === s.subject);
-                    return (
-                      <SelectItem key={s.id} value={s.subject}>
-                        {meta?.emoji} {meta?.label ?? s.subject}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
+              <Label>Статус</Label>
+              <Select value={status} onValueChange={(v) => setStatus((v ?? 'PLANNED') as LessonStatus)}>
+                <SelectTrigger><SelectValue>{STATUSES.find((s) => s.value === status)?.label}</SelectValue></SelectTrigger>
+                <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-          )}
+
+            {availableSubjects.length > 0 && (
+              <div className="space-y-1">
+                <Label>Предмет</Label>
+                <Select value={subject} onValueChange={(v) => setSubject(v as Subject)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Оберіть предмет">
+                      {subject
+                        ? `${SUBJECTS.find(m => m.value === subject)?.emoji ?? ''} ${SUBJECTS.find(m => m.value === subject)?.label ?? subject}`
+                        : <span className="text-muted-foreground">Оберіть предмет</span>}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableSubjects.map((s) => {
+                      const meta = SUBJECTS.find((m) => m.value === s.subject);
+                      return (
+                        <SelectItem key={s.id} value={s.subject}>
+                          {meta?.emoji} {meta?.label ?? s.subject}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
 
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -297,8 +317,8 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
                 />
                 {watch('startDate') && (
                   <>
-                    <Button type="button" size="sm" variant="outline" onClick={() => addDuration(55)}>55хв</Button>
-                    <Button type="button" size="sm" variant="outline" onClick={() => addDuration(30)}>30хв</Button>
+                    <Button type="button" size="sm" variant="outline" className={durationBtnClass(55)} onClick={() => addDuration(55)}>55хв</Button>
+                    <Button type="button" size="sm" variant="outline" className={durationBtnClass(30)} onClick={() => addDuration(30)}>30хв</Button>
                   </>
                 )}
               </div>
@@ -335,9 +355,9 @@ export function LessonModal({ open, onClose, lesson, defaultStartDate, defaultEn
 
           <div className="space-y-1">
             <Label htmlFor="lesson-price">
-              Ціна (грн)
+              <span>Ціна (грн)</span>
               {suggestedPrice !== null && suggestedPrice !== undefined && (
-                <span className="ml-2 text-xs text-muted-foreground">автозаповнено</span>
+                <span className="ml-1.5 text-[10px] text-muted-foreground/70 font-normal normal-case">автозаповнено</span>
               )}
             </Label>
             <Input id="lesson-price" type="number" min={1} step="0.01" {...register('price')} />

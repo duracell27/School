@@ -133,7 +133,7 @@ export default function PaymentsPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         {isLoading ? (
           <p className="text-gray-500 p-6">Завантаження...</p>
         ) : (

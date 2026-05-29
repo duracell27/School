@@ -35,7 +35,7 @@ export default function UsersPage() {
         </Button>
       </div>
 
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <UsersTable
           users={users}
           onEdit={(user) => setModal({ open: true, mode: 'edit', user })}

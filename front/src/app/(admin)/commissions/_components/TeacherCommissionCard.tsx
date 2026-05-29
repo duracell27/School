@@ -37,7 +37,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border p-4 space-y-3">
+    <div className="bg-card rounded-xl border p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <UserAvatar name={name} avatar={avatar} size={36} />
@@ -78,7 +78,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
         {balance.totalRevenue > 0 && (
           <div>
             <p className="text-xs text-gray-400">Приніс школі</p>
-            <p className="font-semibold text-blue-600">{formatCurrency(balance.schoolRevenue)}</p>
+            <p className="font-semibold text-primary">{formatCurrency(balance.schoolRevenue)}</p>
             <p className="text-xs text-gray-400">{balance.conductedLessonsCount} проведених занять</p>
           </div>
         )}
@@ -87,7 +87,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
       <Button
         variant="ghost"
         size="sm"
-        className="text-xs text-blue-500 h-auto p-0"
+        className="text-xs text-primary h-auto p-0"
         onClick={() => setExpanded(e => !e)}
       >
         {expanded ? 'Згорнути' : 'Історія виплат'}
@@ -127,7 +127,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
                   ) : (
                     <>
                       <button
-                        className="text-gray-400 hover:text-blue-500 transition-colors"
+                        className="text-gray-400 hover:text-primary transition-colors"
                         onClick={() => { setEditPayout(p); setConfirmDeleteId(null); }}
                         title="Редагувати"
                       >

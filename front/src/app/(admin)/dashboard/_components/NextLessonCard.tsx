@@ -47,7 +47,7 @@ export function NextLessonCard() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Наступний урок</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Наступний урок</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading && <p className="text-sm text-gray-400">Завантаження...</p>}
@@ -62,7 +62,7 @@ export function NextLessonCard() {
               <p className="text-xs text-gray-500">
                 {formatDate(lesson.startDate)} · {formatTime(lesson.startDate)}
               </p>
-              <p className={`text-sm font-medium mt-0.5 ${isInProgress ? 'text-sky-600' : 'text-blue-600'}`}>
+              <p className={`text-sm font-medium mt-0.5 ${isInProgress ? 'text-emerald-600' : 'text-primary'}`}>
                 {isInProgress
                   ? `Зараз · залишилось ${formatCountdown(msUntilEnd)}`
                   : formatCountdown(msUntilStart)}

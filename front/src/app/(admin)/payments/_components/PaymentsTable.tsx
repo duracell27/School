@@ -85,7 +85,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <ChildAvatar name={payment.child.name} avatar={payment.child.avatar} size={24} />
-                <span className="text-sm font-medium">{payment.child.name}</span>
+                <span className="text-sm font-semibold">{payment.child.name}</span>
                 <span>{flag}</span>
               </div>
               <p className="text-xs text-gray-500">{payment.teacher.name} · {dateStr}</p>
@@ -135,7 +135,7 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <ChildAvatar name={payment.child.name} avatar={payment.child.avatar} size={24} />
-                  <span className="font-medium text-sm">{payment.child.name}</span>
+                  <span className="font-semibold text-sm">{payment.child.name}</span>
                   <span className="text-base">{getCountry(payment.child.country)?.flag ?? payment.child.country}</span>
                 </div>
               </TableCell>

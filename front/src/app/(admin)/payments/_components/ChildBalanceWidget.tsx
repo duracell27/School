@@ -42,11 +42,11 @@ export function ChildBalanceWidget() {
         return (
           <div
             key={`${child.id}:${teacher.id}`}
-            className="flex flex-col gap-2 rounded-xl border bg-white px-3 py-3 md:min-w-[170px] md:px-4"
+            className="flex flex-col gap-2 rounded-xl border bg-card px-3 py-3 md:min-w-[170px] md:px-4"
           >
             <div className="flex items-center gap-2">
               <ChildAvatar name={child.name} avatar={child.avatar} size={28} />
-              <span className="text-sm font-medium leading-tight">{child.name}</span>
+              <span className="text-sm font-semibold leading-tight">{child.name}</span>
               <span className="text-base">{getCountry(child.country)?.flag ?? child.country}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function ChildBalanceWidget() {
                 </span>
               )}
               {isPrepaid && (
-                <span className="text-sm font-bold text-sky-600">
+                <span className="text-sm font-bold text-primary">
                   +{prepaidCount} <span className="font-normal">переплачено</span>
                 </span>
               )}

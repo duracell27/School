@@ -29,24 +29,24 @@ export function MobileHeader() {
   useEffect(() => { setOpen(false); }, [pathname]);
 
   return (
-    <header className="md:hidden sticky top-0 z-40 bg-white border-b px-4 h-12 flex items-center justify-between">
+    <header className="md:hidden sticky top-0 z-40 bg-sidebar text-sidebar-foreground border-b border-sidebar-border px-4 h-12 flex items-center justify-between">
       <div className="leading-tight">
         <p className="font-semibold text-sm">Teacher Platform</p>
         {schoolAccount != null && (
-          <p className="text-[10px] text-gray-400 leading-none">
-            Баланс: <span className="font-semibold text-black">{formatCurrency(schoolAccount.balance)}</span>
+          <p className="text-[10px] text-sidebar-foreground/60 leading-none">
+            Баланс: <span className="font-semibold text-sidebar-foreground">{formatCurrency(schoolAccount.balance)}</span>
           </p>
         )}
       </div>
       <button
         onClick={() => setOpen(v => !v)}
-        className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-sidebar-accent transition-colors"
         aria-label="Меню"
       >
         {open ? <X size={20} /> : <Menu size={20} />}
       </button>
       {open && (
-        <div className="absolute top-full left-0 right-0 bg-white border-b shadow-lg z-50">
+        <div className="absolute top-full left-0 right-0 bg-sidebar text-sidebar-foreground border-b border-sidebar-border shadow-lg z-50">
           <nav className="px-3 py-2 space-y-0.5">
             {navItems.map((item) => {
               const active = pathname === item.href || pathname.startsWith(item.href + '/');
@@ -55,7 +55,9 @@ export function MobileHeader() {
                   key={item.href}
                   href={item.href}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    active ? 'bg-gray-100 text-gray-900' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    active
+                      ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
                   }`}
                 >
                   {item.label}
@@ -68,13 +70,13 @@ export function MobileHeader() {
               );
             })}
           </nav>
-          <div className="px-3 pb-3 pt-1 border-t">
+          <div className="px-3 pb-3 pt-1 border-t border-sidebar-border">
             <button
               onClick={async () => {
                 await apiFetch('/auth/logout', { method: 'POST' });
                 router.replace('/login');
               }}
-              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+              className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-300 hover:bg-sidebar-accent transition-colors"
             >
               Вийти
             </button>

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
-import { Montserrat, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const montserrat = Montserrat({ variable: '--font-sans', subsets: ['latin', 'cyrillic'] });
+const geist = Geist({ variable: '--font-sans', subsets: ['latin'] });
 const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="uk">
-      <body className={`${montserrat.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geist.variable} ${geistMono.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -59,7 +59,7 @@ function DialogContent({
           "bottom-0 left-0 right-0 max-h-[90vh] overflow-y-auto rounded-t-2xl",
           "data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
           // desktop: centred modal
-          "sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-sm sm:rounded-xl sm:max-h-none sm:overflow-visible",
+          "sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:max-w-md sm:p-6 sm:rounded-xl sm:max-h-none sm:overflow-visible",
           "sm:data-open:zoom-in-95 sm:data-closed:zoom-out-95",
           className
         )}
@@ -109,7 +109,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -129,7 +129,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "font-heading text-base leading-none font-medium",
+        "font-heading text-base leading-none font-semibold",
         className
       )}
       {...props}

@@ -17,7 +17,7 @@ export function TeachersTable({ period, date }: TeachersTableProps) {
   return (
     <Card className="col-span-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Вчителі</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Вчителі</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {isLoading ? (
@@ -32,7 +32,7 @@ export function TeachersTable({ period, date }: TeachersTableProps) {
                 <div key={t.id} className="px-4 py-3 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <ChildAvatar name={t.name} avatar={t.avatar} size={32} />
-                    <span className="font-medium text-sm">{t.name}</span>
+                    <span className="font-semibold text-sm">{t.name}</span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0 text-right">
                     <div>
@@ -55,7 +55,7 @@ export function TeachersTable({ period, date }: TeachersTableProps) {
             <div className="hidden md:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b text-gray-500 text-xs">
+                  <tr className="border-b text-gray-500 text-xs bg-muted/40">
                     <th className="text-left px-6 py-2 font-medium">Ім&apos;я</th>
                     <th className="text-right px-4 py-2 font-medium">Уроків</th>
                     <th className="text-right px-4 py-2 font-medium">Зароблено</th>
@@ -69,14 +69,14 @@ export function TeachersTable({ period, date }: TeachersTableProps) {
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-2">
                           <ChildAvatar name={t.name} avatar={t.avatar} size={28} />
-                          <span className="font-medium">{t.name}</span>
+                          <span className="font-semibold">{t.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">{t.lessonsCount}</td>
                       <td className="px-4 py-3 text-right tabular-nums font-medium">
                         {formatCurrency(t.earned)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-blue-700">
+                      <td className="px-4 py-3 text-right tabular-nums text-primary font-medium">
                         {formatCurrency(t.expected)}
                       </td>
                       <td className="px-6 py-3 text-right tabular-nums">{t.childrenCount}</td>

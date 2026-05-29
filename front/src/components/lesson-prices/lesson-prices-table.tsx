@@ -30,7 +30,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <ChildAvatar name={p.child.name} avatar={p.child.avatar} size={24} />
-                  <span className="text-sm font-medium">{p.child.name}</span>
+                  <span className="text-sm font-semibold">{p.child.name}</span>
                   <span>{flag}</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -73,7 +73,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <ChildAvatar name={p.child.name} avatar={p.child.avatar} size={28} />
-                    <span className="font-medium">{p.child.name}</span>
+                    <span className="font-semibold">{p.child.name}</span>
                     <span className="text-base">{getCountry(p.child.country)?.flag ?? p.child.country}</span>
                   </div>
                 </TableCell>

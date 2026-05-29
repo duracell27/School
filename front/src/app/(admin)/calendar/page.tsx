@@ -226,7 +226,7 @@ export default function CalendarPage() {
             <Button
               size="sm"
               variant="outline"
-              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              className="border-primary/30 text-primary hover:bg-accent"
               disabled={copyFromPrevWeek.isPending}
               onClick={async () => {
                 const result = await copyFromPrevWeek.mutateAsync({
@@ -287,7 +287,7 @@ export default function CalendarPage() {
             />
           )}
           {isAdmin && !teacherId && (
-            <div className="w-48 shrink-0 flex items-center justify-center h-24 border rounded-lg bg-white text-sm text-gray-400">
+            <div className="w-48 shrink-0 flex items-center justify-center h-24 border rounded-lg bg-card text-sm text-gray-400">
               Оберіть вчителя
             </div>
           )}

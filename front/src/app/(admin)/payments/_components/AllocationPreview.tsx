@@ -45,10 +45,10 @@ export function AllocationPreview({
             <span key={`d${i}`} className="w-5 h-5 rounded-sm bg-red-400" title="Борг закрито" />
           ))}
           {Array.from({ length: prepaidLessons }).map((_, i) => (
-            <span key={`p${i}`} className="w-5 h-5 rounded-sm bg-sky-400" title="Передоплата" />
+            <span key={`p${i}`} className="w-5 h-5 rounded-sm bg-primary" title="Передоплата" />
           ))}
           {Array.from({ length: virtualPrepaidLessons }).map((_, i) => (
-            <span key={`v${i}`} className="w-5 h-5 rounded-sm border-2 border-sky-400 bg-sky-50" title="Передоплата (без розкладу)" />
+            <span key={`v${i}`} className="w-5 h-5 rounded-sm border-2 border-primary bg-accent" title="Передоплата (без розкладу)" />
           ))}
         </div>
       )}
@@ -57,7 +57,7 @@ export function AllocationPreview({
         {debtLessons > 0 && <p>Закрито боргу: {debtLessons} заняття</p>}
         {prepaidLessons > 0 && <p>Передоплачено: {prepaidLessons} заняття</p>}
         {virtualPrepaidLessons > 0 && (
-          <p className="text-sky-700">
+          <p className="text-primary">
             Передоплата {virtualPrepaidLessons} занять (буде застосовано автоматично)
           </p>
         )}
@@ -97,7 +97,7 @@ export function AllocationPreview({
             type="button"
             onClick={onTopup}
             disabled={topupPending || schoolBalance < nextLessonShortfall}
-            className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200 disabled:opacity-50 transition-colors"
+            className="text-xs px-2 py-1 rounded bg-accent text-accent-foreground hover:bg-accent/70 disabled:opacity-50 transition-colors"
           >
             Взяти {formatCurrency(nextLessonShortfall)} з рахунку школи
           </button>

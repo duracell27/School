@@ -31,7 +31,7 @@ const STATUS_LABELS: Record<LessonStatus, string> = {
 };
 
 const STATUS_COLORS: Record<LessonStatus, string> = {
-  PLANNED: 'bg-blue-100 text-blue-700',
+  PLANNED: 'bg-[#eaf2ff] text-[#1a4ba3]',
   CONDUCTED: 'bg-green-100 text-green-700',
   CANCELLED: 'bg-red-100 text-red-700',
   RESCHEDULED: 'bg-orange-100 text-orange-700',
@@ -46,7 +46,7 @@ const PAYMENT_STATUS_LABELS: Record<NonNullable<PaymentStatus>, string> = {
 const PAYMENT_STATUS_COLORS: Record<NonNullable<PaymentStatus>, string> = {
   PAID: 'bg-green-100 text-green-700',
   UNPAID: 'bg-red-100 text-red-700',
-  PREPAID: 'bg-blue-100 text-blue-700',
+  PREPAID: 'bg-[#eaf2ff] text-[#1a4ba3]',
 };
 
 function PaymentBadge({ paymentStatus, paidAmount, className }: {
@@ -71,10 +71,12 @@ const ALL_STATUSES: LessonStatus[] = ['PLANNED', 'CONDUCTED', 'CANCELLED', 'RESC
 function StatusSelect({
   lesson,
   onMarkConducted,
+  onMarkCancelled,
   className,
 }: {
   lesson: Lesson;
   onMarkConducted: (lesson: Lesson) => void;
+  onMarkCancelled: (lesson: Lesson) => void;
   className?: string;
 }) {
   const update = useUpdateLesson();
@@ -83,6 +85,10 @@ function StatusSelect({
     const newStatus = e.target.value as LessonStatus;
     if (newStatus === 'CONDUCTED') {
       onMarkConducted(lesson);
+      return;
+    }
+    if (newStatus === 'CANCELLED') {
+      onMarkCancelled(lesson);
       return;
     }
     update.mutate({ id: lesson.id, data: { status: newStatus } });
@@ -141,6 +147,9 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [noteModal, setNoteModal] = useState<{ lessonId: string; mode: 'create' | 'view' } | null>(null);
   const [pendingConducted, setPendingConducted] = useState<Lesson | null>(null);
+  const [pendingCancelled, setPendingCancelled] = useState<Lesson | null>(null);
+  const [cancelSide, setCancelSide] = useState<CancellationSide>('STUDENT');
+  const [cancelReason, setCancelReason] = useState('');
   const [cancellationInfo, setCancellationInfo] = useState<{ side: CancellationSide | null; reason: string | null } | null>(null);
   const currentUser = useSessionStore((s) => s.user);
   const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'ADMIN_TEACHER';
@@ -163,6 +172,21 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
   function handleMarkConducted(lesson: Lesson) {
     setPendingConducted(lesson);
     setNoteModal({ lessonId: lesson.id, mode: 'create' });
+  }
+
+  function handleMarkCancelled(lesson: Lesson) {
+    setCancelSide('STUDENT');
+    setCancelReason('');
+    setPendingCancelled(lesson);
+  }
+
+  async function handleCancelConfirm() {
+    if (!pendingCancelled) return;
+    await updateLesson.mutateAsync({
+      id: pendingCancelled.id,
+      data: { status: 'CANCELLED', cancellationSide: cancelSide, cancellationReason: cancelReason || undefined },
+    });
+    setPendingCancelled(null);
   }
 
   async function handleNoteSaved() {
@@ -201,7 +225,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 <div className="flex items-start gap-2 min-w-0">
                   <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={32} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium leading-tight truncate">{lesson.child.name}</p>
+                    <p className="text-sm font-semibold leading-tight truncate">{lesson.child.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <p className="text-xs font-medium text-gray-500">{startStr}</p>
                       <span className="text-xs text-gray-400">{Number(lesson.price).toLocaleString('uk-UA')} грн</span>
@@ -221,7 +245,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                   {lesson.status === 'CANCELLED' && (lesson.cancellationSide || lesson.cancellationReason) && (
                     <Button
                       size="sm" variant="outline"
-                      className="h-7 px-2 text-xs text-orange-600 border-orange-200"
+                      className="h-7 px-2 text-xs text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
                       onClick={() => setCancellationInfo({ side: lesson.cancellationSide ?? null, reason: lesson.cancellationReason ?? null })}
                     >
                       <FileText size={12} />
@@ -239,6 +263,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 <StatusSelect
                   lesson={lesson}
                   onMarkConducted={handleMarkConducted}
+                  onMarkCancelled={handleMarkCancelled}
                   className={lesson.paymentStatus || overdue ? 'flex-1' : 'w-full'}
                 />
                 {overdue && !lesson.paymentStatus && (
@@ -284,7 +309,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <ChildAvatar name={lesson.child.name} avatar={lesson.child.avatar} size={28} />
-                    <span className="font-medium">{lesson.child.name}</span>
+                    <span className="font-semibold">{lesson.child.name}</span>
                     <span className="text-base">{getCountry(lesson.child.country)?.flag ?? lesson.child.country}</span>
                   </div>
                 </TableCell>
@@ -298,7 +323,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col gap-1">
-                    <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} />
+                    <StatusSelect lesson={lesson} onMarkConducted={handleMarkConducted} onMarkCancelled={handleMarkCancelled} />
                     {isOverdue(lesson) && (
                       <span className="text-xs text-red-600 font-medium">Не оброблено!</span>
                     )}
@@ -343,6 +368,7 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"
                       onClick={() => setCancellationInfo({ side: lesson.cancellationSide ?? null, reason: lesson.cancellationReason ?? null })}
                     >
                       <FileText size={14} className="mr-1" /> Причина
@@ -370,6 +396,57 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
           mode={noteModal.mode}
           onSaved={noteModal.mode === 'create' ? handleNoteSaved : undefined}
         />
+      )}
+
+      {pendingCancelled && (
+        <Dialog open onOpenChange={(o) => !o && setPendingCancelled(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Скасування уроку</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">Сторона скасування</p>
+                <div className="flex gap-2">
+                  {(['STUDENT', 'TEACHER'] as CancellationSide[]).map((side) => (
+                    <button
+                      key={side}
+                      type="button"
+                      onClick={() => setCancelSide(side)}
+                      className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                        cancelSide === side
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {side === 'STUDENT' ? 'Учень' : 'Вчитель'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 mb-1.5">Причина <span className="text-gray-400">(необов&apos;язково)</span></p>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Вкажіть причину скасування..."
+                  rows={3}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPendingCancelled(null)}>Скасувати</Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelConfirm}
+                disabled={updateLesson.isPending}
+              >
+                Підтвердити скасування
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
       {cancellationInfo && (

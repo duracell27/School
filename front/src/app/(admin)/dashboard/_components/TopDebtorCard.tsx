@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChildAvatar } from '@/components/children/child-avatar';
+import { getCountry } from '@/lib/countries';
 import { useChildBalances } from '@/lib/lessons';
 
 export function TopDebtorCard() {
@@ -14,7 +15,7 @@ export function TopDebtorCard() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Найбільший боржник</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Найбільший боржник</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -24,6 +25,11 @@ export function TopDebtorCard() {
             <div className="flex items-center gap-2 mb-1">
               <ChildAvatar name={topDebtor.child.name} avatar={topDebtor.child.avatar} size={22} />
               <p className="font-semibold text-sm truncate">{topDebtor.child.name}</p>
+              {topDebtor.child.country && (
+                <span aria-hidden="true" className="text-base shrink-0">
+                  {getCountry(topDebtor.child.country)?.flag ?? ''}
+                </span>
+              )}
             </div>
             <p className="text-2xl font-bold text-red-500">{topDebtor.debtCount} зан.</p>
             {topDebtor.debtUah > 0 && (

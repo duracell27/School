@@ -8,6 +8,7 @@ import { ActiveChildrenCard } from './_components/ActiveChildrenCard';
 import { TopDebtorCard } from './_components/TopDebtorCard';
 import { LessonRatioCard } from './_components/LessonRatioCard';
 import { CancellationSidesCard } from './_components/CancellationSidesCard';
+import { AvgCheckCard } from './_components/AvgCheckCard';
 import { LessonChart } from './_components/LessonChart';
 import { ChildrenByCountry } from './_components/ChildrenByCountry';
 import { TeachersTable } from './_components/TeachersTable';
@@ -119,6 +120,7 @@ export default function DashboardPage() {
         <TopDebtorCard />
         <LessonRatioCard period={period} date={dateParam} />
         <CancellationSidesCard period={period} date={dateParam} />
+        <AvgCheckCard period={period} date={dateParam} />
       </div>
 
       {/* Bottom row: chart (2/3) + country breakdown (1/3) */}

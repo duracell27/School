@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { avatarColor } from '@/lib/avatar-color';
 
 interface UserAvatarProps {
   name: string;
@@ -34,10 +35,11 @@ export function UserAvatar({ name, avatar, size = 32 }: UserAvatarProps) {
     );
   }
 
+  const color = avatarColor(name);
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-medium select-none"
-      style={{ ...style, fontSize: size * 0.38 }}
+      className="inline-flex items-center justify-center rounded-full font-medium select-none"
+      style={{ ...style, fontSize: size * 0.38, backgroundColor: color.bg, color: color.text }}
     >
       {initials}
     </span>

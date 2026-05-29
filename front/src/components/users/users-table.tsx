@@ -40,7 +40,7 @@ export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
             <div className="flex items-start gap-2 min-w-0">
               <UserAvatar name={user.name} avatar={user.avatar} size={36} />
               <div className="min-w-0">
-                <p className="text-sm font-medium leading-tight">{user.name}</p>
+                <p className="text-sm font-semibold leading-tight">{user.name}</p>
                 <p className="text-xs text-gray-500 truncate">{user.email}</p>
                 <p className="text-xs text-gray-400">{ROLE_LABELS[user.role] ?? user.role}</p>
               </div>
@@ -77,7 +77,7 @@ export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
                 <TableCell>
                   <div className="flex items-center gap-2.5">
                     <UserAvatar name={user.name} avatar={user.avatar} size={32} />
-                    <span className="font-medium">{user.name}</span>
+                    <span className="font-semibold">{user.name}</span>
                   </div>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>

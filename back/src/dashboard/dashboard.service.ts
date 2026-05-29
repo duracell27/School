@@ -76,10 +76,11 @@ export function buildChartSkeleton(period: Period, periodStart: Date): ChartPoin
   }
   if (period === 'month') {
     const daysInMonth = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0).getDate();
-    const numWeeks = Math.ceil(daysInMonth / 7);
-    return Array.from({ length: numWeeks }, (_, i) =>
-      emptyPoint(monthWeekLabel(i + 1, periodStart.getMonth(), periodStart.getFullYear())),
-    );
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const d = new Date(periodStart.getFullYear(), periodStart.getMonth(), i + 1);
+      const label = d.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
+      return emptyPoint(label);
+    });
   }
   return UA_MONTHS.map((m) => emptyPoint(m));
 }
@@ -89,8 +90,7 @@ export function getLessonGroupKey(lessonDate: Date, period: Period): string {
     return lessonDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
   }
   if (period === 'month') {
-    const weekNum = Math.ceil(lessonDate.getDate() / 7);
-    return monthWeekLabel(weekNum, lessonDate.getMonth(), lessonDate.getFullYear());
+    return lessonDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' });
   }
   return UA_MONTHS[lessonDate.getMonth()];
 }
@@ -127,7 +127,7 @@ export class DashboardService {
     const now = new Date();
     const teacherFilter = userRole === Role.TEACHER ? { teacherId: userId } : {};
 
-    const [conducted, conductedDurations, planned, prevConducted, payouts, cancelled, cancellationSides] = await Promise.all([
+    const [conducted, conductedDurations, planned, prevConductedRaw, payouts, cancelled, cancellationSides] = await Promise.all([
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
         _sum: { price: true },
@@ -135,15 +135,15 @@ export class DashboardService {
       }),
       this.prisma.lesson.findMany({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: start, lt: end } },
-        select: { startDate: true, endDate: true },
+        select: { startDate: true, endDate: true, price: true },
       }),
       this.prisma.lesson.aggregate({
         where: { ...teacherFilter, status: 'PLANNED', startDate: { gte: now, lt: end } },
         _sum: { price: true },
       }),
-      this.prisma.lesson.aggregate({
+      this.prisma.lesson.findMany({
         where: { ...teacherFilter, status: 'CONDUCTED', startDate: { gte: prevStart, lt: prevEnd } },
-        _sum: { price: true },
+        select: { startDate: true, endDate: true, price: true },
       }),
       userRole !== Role.TEACHER
         ? this.prisma.teacherPayout.aggregate({
@@ -164,7 +164,7 @@ export class DashboardService {
 
     const earned = Number(conducted._sum.price ?? 0);
     const expected = Number(planned._sum.price ?? 0);
-    const prevEarned = Number(prevConducted._sum.price ?? 0);
+    const prevEarned = prevConductedRaw.reduce((sum, l) => sum + Number(l.price), 0);
     const payoutsTotal = Number(payouts._sum.amount ?? 0);
     const earnedDelta = prevEarned === 0
       ? null
@@ -174,6 +174,22 @@ export class DashboardService {
         sum + (new Date(l.endDate).getTime() - new Date(l.startDate).getTime()) / 3600000, 0
       ) * 10
     ) / 10;
+
+    const FIFTY_FIVE_MIN_MS = 55 * 60 * 1000;
+    const TOLERANCE_MS = 5 * 60 * 1000;
+    const is55min = (l: { startDate: Date; endDate: Date }) => {
+      const dur = new Date(l.endDate).getTime() - new Date(l.startDate).getTime();
+      return Math.abs(dur - FIFTY_FIVE_MIN_MS) <= TOLERANCE_MS;
+    };
+    const lessons55 = conductedDurations.filter(is55min);
+    const avgCheck = lessons55.length === 0 ? null
+      : Math.round(lessons55.reduce((sum, l) => sum + Number(l.price), 0) / lessons55.length);
+    const prevLessons55 = prevConductedRaw.filter(is55min);
+    const prevAvgCheck = prevLessons55.length === 0 ? null
+      : Math.round(prevLessons55.reduce((sum, l) => sum + Number(l.price), 0) / prevLessons55.length);
+    const avgCheckDelta = avgCheck !== null && prevAvgCheck !== null && prevAvgCheck !== 0
+      ? Math.round(((avgCheck - prevAvgCheck) / prevAvgCheck) * 100)
+      : null;
 
     const cancelledByStudent = cancellationSides.find((r) => r.cancellationSide === 'STUDENT')?._count.id ?? 0;
     const cancelledByTeacher = cancellationSides.find((r) => r.cancellationSide === 'TEACHER')?._count.id ?? 0;
@@ -189,6 +205,8 @@ export class DashboardService {
       cancelledByTeacher,
       payoutsTotal,
       netProfit: Math.round((earned - payoutsTotal) * 100) / 100,
+      avgCheck,
+      avgCheckDelta,
     };
   }
 

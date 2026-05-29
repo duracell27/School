@@ -120,7 +120,7 @@ export default function LessonsPage() {
         )}
       </div>
 
-      <div className="bg-white rounded-lg border">
+      <div className="bg-card rounded-lg border">
         <LessonsTable
           lessons={filtered}
           onEdit={(lesson) => setModal({ open: true, mode: 'edit', lesson })}

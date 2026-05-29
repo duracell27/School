@@ -22,7 +22,7 @@ export function CancellationSidesCard({ period, date }: CancellationSidesCardPro
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Причина скасувань</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Причина скасувань</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -39,14 +39,14 @@ export function CancellationSidesCard({ period, date }: CancellationSidesCardPro
             {/* Stacked bar: student (blue) | teacher (orange) */}
             <div className="w-full h-2 rounded-full bg-orange-300 overflow-hidden">
               <div
-                className="h-full bg-blue-400 rounded-full transition-all"
+                className="h-full bg-primary rounded-full transition-all"
                 style={{ width: `${studentPct}%` }}
               />
             </div>
 
             <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-              <span>👤 {byStudent} учень</span>
-              <span>🧑‍🏫 {byTeacher} вчитель</span>
+              <span>{byStudent} учень</span>
+              <span>{byTeacher} вчитель</span>
             </div>
           </>
         )}

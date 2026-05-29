@@ -152,7 +152,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                 <ChildAvatar name={child.name} avatar={child.avatar} size={36} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-medium leading-tight">{child.name}</span>
+                    <span className="text-sm font-semibold leading-tight">{child.name}</span>
                     <span>{flag}</span>
                   </div>
                   {child.subjects.length > 0 && (
@@ -216,7 +216,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                   <TableCell>
                     <div className="flex items-center gap-2.5">
                       <ChildAvatar name={child.name} avatar={child.avatar} size={32} />
-                      <span className="font-medium">{child.name}</span>
+                      <span className="font-semibold">{child.name}</span>
                     </div>
                   </TableCell>
                   <TableCell>{child.age}</TableCell>
@@ -262,7 +262,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                               href={toTelegramHref(c.phone)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline"
+                              className="text-primary hover:underline"
                             >
                               {c.phone}
                             </a>

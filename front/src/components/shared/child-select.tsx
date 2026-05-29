@@ -62,7 +62,7 @@ export function ChildSelect({ children, value, onChange, placeholder = 'Обер
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-white border border-input rounded-lg shadow-lg">
+        <div className="absolute z-50 top-full mt-1 w-full bg-popover border border-input rounded-lg shadow-lg">
           <div className="p-2 border-b">
             <Input
               ref={inputRef}

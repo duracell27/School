@@ -11,6 +11,8 @@ export interface DashboardSummary {
   cancelledByTeacher: number;
   payoutsTotal: number;
   netProfit: number;
+  avgCheck: number | null;
+  avgCheckDelta: number | null;
 }
 
 export interface ChartPoint {

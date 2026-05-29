@@ -15,10 +15,10 @@ const TOTAL_H = (HOUR_END - HOUR_START) * ROW_PX;
 const EXPANDED_HEIGHT = Math.round((55 / 60) * ROW_PX);
 
 const STATUS_STYLE: Record<LessonStatus, string> = {
-  PLANNED: 'border-blue-400 bg-blue-50 text-blue-900',
-  CONDUCTED: 'border-green-500 bg-green-50 text-green-900',
-  CANCELLED: 'border-red-400 bg-red-50 text-red-900',
-  RESCHEDULED: 'border-orange-400 bg-orange-50 text-orange-900',
+  CONDUCTED:   'border-[#22a06b] bg-[#e7f5ee] text-[#0e5a3a]',
+  PLANNED:     'border-[#4f8df5] bg-[#eaf2ff] text-[#1a4ba3]',
+  CANCELLED:   'border-[#e15a5a] bg-[#fdecec] text-[#8a2424]',
+  RESCHEDULED: 'border-[#e8893c] bg-[#fdf0e3] text-[#8a4d18]',
 };
 
 
@@ -221,7 +221,7 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
   }, [lessons, days]);
 
   return (
-    <div className="flex border rounded-lg overflow-hidden bg-white select-none">
+    <div className="flex border rounded-lg overflow-hidden bg-card select-none">
       {/* Time column */}
       <div className="w-12 shrink-0 border-r bg-gray-50">
         <div className="h-10 border-b" />
@@ -253,11 +253,11 @@ export function WeekCalendar({ lessons, weekStart, onSlotClick, onLessonClick }:
 
         return (
           <div key={key} className="flex-1 min-w-0 border-r last:border-r-0">
-            <div className={`h-10 border-b flex flex-col items-center justify-center ${isToday ? 'bg-blue-50' : 'bg-gray-50'}`}>
+            <div className={`h-10 border-b flex flex-col items-center justify-center ${isToday ? 'bg-accent' : 'bg-gray-50'}`}>
               <span className="text-[11px] text-gray-500 capitalize">
                 {day.toLocaleDateString('uk-UA', { weekday: 'short' })}
               </span>
-              <span className={`text-sm font-semibold leading-none ${isToday ? 'text-blue-600' : ''}`}>
+              <span className={`text-sm font-semibold leading-none ${isToday ? 'text-primary' : ''}`}>
                 {day.getDate()}
               </span>
             </div>

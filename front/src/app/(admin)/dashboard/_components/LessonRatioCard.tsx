@@ -21,7 +21,7 @@ export function LessonRatioCard({ period, date }: LessonRatioCardProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Статус уроків</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Статус уроків</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -38,13 +38,13 @@ export function LessonRatioCard({ period, date }: LessonRatioCardProps) {
                 </div>
                 <div className="w-full h-2 rounded-full bg-gray-100 overflow-hidden">
                   <div
-                    className="h-full bg-foreground rounded-full transition-all"
+                    className="h-full bg-emerald-500 rounded-full transition-all"
                     style={{ width: `${conductedPct}%` }}
                   />
                 </div>
                 <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-                  <span>✅ {conducted} проведено</span>
-                  <span>❌ {cancelled} скасовано</span>
+                  <span>{conducted} проведено</span>
+                  <span>{cancelled} скасовано</span>
                 </div>
               </>
             )}

@@ -86,7 +86,7 @@ export function LessonActionsPopover({ lesson, anchorRect, onClose, onEdit }: Le
     <>
       <div
         ref={ref}
-        className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-52"
+        className="fixed z-50 bg-popover border border-border rounded-lg shadow-lg py-1 w-52"
         style={{ top, left }}
       >
         {lesson.status !== 'CONDUCTED' && (

@@ -57,7 +57,7 @@ export function CancellationModal({ open, onClose, onConfirm }: CancellationModa
                 onClick={() => setSide('STUDENT')}
                 className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
                   side === 'STUDENT'
-                    ? 'bg-blue-500 text-white border-blue-500'
+                    ? 'bg-primary text-primary-foreground border-primary'
                     : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >
@@ -68,7 +68,7 @@ export function CancellationModal({ open, onClose, onConfirm }: CancellationModa
                 onClick={() => setSide('TEACHER')}
                 className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${
                   side === 'TEACHER'
-                    ? 'bg-blue-500 text-white border-blue-500'
+                    ? 'bg-primary text-primary-foreground border-primary'
                     : 'border-gray-200 hover:bg-gray-50'
                 }`}
               >

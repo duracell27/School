@@ -9,7 +9,7 @@ export function ActiveChildrenCard() {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-gray-500">Учні</CardTitle>
+        <CardTitle className="text-sm font-semibold text-muted-foreground">Учні</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -18,7 +18,7 @@ export function ActiveChildrenCard() {
           <>
             <p className="text-2xl font-bold">{data?.active ?? 0}</p>
             {!!data?.newThisMonth && (
-              <p className="text-xs text-sky-600 font-medium mt-1">
+              <p className="text-xs text-emerald-600 font-medium mt-1">
                 +{data.newThisMonth} цього місяця
               </p>
             )}

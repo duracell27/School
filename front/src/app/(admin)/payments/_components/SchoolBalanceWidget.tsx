@@ -49,7 +49,7 @@ export function SchoolBalanceWidget() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">Аванси учнів</p>
-                <p className="text-sm font-medium text-sky-600">{formatCurrency(summary?.studentAdvances ?? 0)}</p>
+                <p className="text-sm font-medium text-primary">{formatCurrency(summary?.studentAdvances ?? 0)}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">Борги учнів</p>

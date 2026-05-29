@@ -11,10 +11,10 @@ import type { Child } from '@/types/child';
 import type { Lesson } from '@/types/lesson';
 
 const STATUS_DOT: Record<string, string> = {
-  CONDUCTED: 'bg-green-500',
-  PLANNED: 'bg-blue-500',
-  RESCHEDULED: 'bg-amber-400',
-  CANCELLED: 'bg-red-400',
+  CONDUCTED:   'bg-[#22a06b]',
+  PLANNED:     'bg-[#4f8df5]',
+  RESCHEDULED: 'bg-[#e8893c]',
+  CANCELLED:   'bg-[#e15a5a]',
 };
 
 const STATUS_TITLE: Record<string, string> = {
@@ -57,7 +57,7 @@ function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility }: Dra
       <div className="flex flex-col min-w-0 flex-1">
         <div className="flex items-center gap-1 min-w-0">
           <span className="text-sm leading-tight shrink-0">{flag}</span>
-          <span className="text-sm truncate leading-tight">{child.name}</span>
+          <span className="text-sm font-semibold truncate leading-tight">{child.name}</span>
         </div>
         {(child.subjects.length > 0 || weekStatuses.length > 0) && (
           <div className="flex items-center gap-1 mt-0.5">
@@ -120,20 +120,20 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
   }, [childList, search]);
 
   return (
-    <div className="w-48 shrink-0 flex flex-col gap-2 border rounded-lg bg-white p-2">
+    <div className="w-48 shrink-0 flex flex-col gap-2 border rounded-lg bg-card p-2">
       {/* Duration switcher */}
-      <div className="flex rounded-lg border overflow-hidden">
+      <div className="inline-flex rounded-lg border bg-card p-0.5 text-xs font-medium">
         <button
-          className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
-            duration === 55 ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'
+          className={`flex-1 py-1.5 rounded-md transition-colors ${
+            duration === 55 ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
           onClick={() => onDurationChange(55)}
         >
           55хв
         </button>
         <button
-          className={`flex-1 text-xs py-1.5 font-medium transition-colors border-l ${
-            duration === 30 ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'
+          className={`flex-1 py-1.5 rounded-md transition-colors ${
+            duration === 30 ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground'
           }`}
           onClick={() => onDurationChange(30)}
         >
@@ -148,7 +148,7 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Пошук..."
-          className="flex-1 min-w-0 text-xs px-2 py-1 rounded border border-gray-200 outline-none focus:border-blue-400 bg-white"
+          className="flex-1 min-w-0 text-xs px-2 py-1 rounded border border-gray-200 outline-none focus:border-ring bg-card"
         />
         <button
           onClick={onToggleAll}
