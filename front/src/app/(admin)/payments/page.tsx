@@ -30,7 +30,14 @@ export default function PaymentsPage() {
   const [toFilter, setToFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
-  const [modal, setModal] = useState<{ open: boolean; payment?: Payment }>({ open: false });
+  const [modal, setModal] = useState<{
+    open: boolean;
+    payment?: Payment;
+    defaultChildId?: string;
+    defaultTeacherId?: string;
+    defaultAmount?: string;
+    defaultDebtCount?: number;
+  }>({ open: false });
 
   const hasActiveFilters = !!(teacherFilter || childFilter || fromFilter || toFilter);
 
@@ -70,7 +77,17 @@ export default function PaymentsPage() {
 
       <SchoolBalanceWidget />
 
-      <ChildBalanceWidget />
+      <ChildBalanceWidget
+        onQuickPay={(childId, teacherId, debtCount, debtUah) =>
+          setModal({
+            open: true,
+            defaultChildId: childId,
+            defaultTeacherId: teacherId,
+            defaultAmount: debtUah > 0 ? String(debtUah) : '',
+            defaultDebtCount: debtCount,
+          })
+        }
+      />
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -158,6 +175,10 @@ export default function PaymentsPage() {
       <PaymentModal
         open={modal.open}
         payment={modal.payment}
+        defaultChildId={modal.defaultChildId}
+        defaultTeacherId={modal.defaultTeacherId}
+        defaultAmount={modal.defaultAmount}
+        defaultDebtCount={modal.defaultDebtCount}
         onClose={() => setModal({ open: false })}
       />
     </div>

@@ -22,9 +22,13 @@ interface PaymentModalProps {
   open: boolean;
   onClose: () => void;
   payment?: Payment;
+  defaultChildId?: string;
+  defaultTeacherId?: string;
+  defaultAmount?: string;
+  defaultDebtCount?: number;
 }
 
-export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
+export function PaymentModal({ open, onClose, payment, defaultChildId, defaultTeacherId, defaultAmount, defaultDebtCount }: PaymentModalProps) {
   const isEdit = !!payment;
 
   const { data: allChildren = [] } = useChildren();
@@ -51,13 +55,13 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
       setDate(payment.date.split('T')[0]);
       setNotes(payment.notes ?? '');
     } else {
-      setChildId('');
-      setTeacherId('');
-      setAmount('');
+      setChildId(defaultChildId ?? '');
+      setTeacherId(defaultTeacherId ?? '');
+      setAmount(defaultAmount ?? '');
       setDate(new Date().toISOString().split('T')[0]);
       setNotes('');
     }
-  }, [payment, open]);
+  }, [payment, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChildChange(id: string) {
     setChildId(id);
@@ -71,6 +75,12 @@ export function PaymentModal({ open, onClose, payment }: PaymentModalProps) {
   const lessonPrice = childId && teacherId
     ? lessonPrices.find(lp => lp.child.id === childId && lp.teacher.id === teacherId)
     : null;
+
+  useEffect(() => {
+    if (!isEdit && defaultDebtCount && defaultDebtCount > 0 && lessonPrice && !amount) {
+      setAmount(String(defaultDebtCount * Number(lessonPrice.price)));
+    }
+  }, [lessonPrice]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const createPayment = useCreatePayment();
   const updatePayment = useUpdatePayment();

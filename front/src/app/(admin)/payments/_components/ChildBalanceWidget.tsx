@@ -4,8 +4,13 @@ import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { getCountry } from '@/lib/countries';
 import { useChildBalances } from '@/lib/lessons';
+import { Zap } from 'lucide-react';
 
-export function ChildBalanceWidget() {
+interface ChildBalanceWidgetProps {
+  onQuickPay?: (childId: string, teacherId: string, debtCount: number, debtUah: number) => void;
+}
+
+export function ChildBalanceWidget({ onQuickPay }: ChildBalanceWidgetProps) {
   const { data: balances = [], isLoading } = useChildBalances();
 
   if (isLoading) {
@@ -78,6 +83,15 @@ export function ChildBalanceWidget() {
                 <span className="text-xl" title="Розрахунок в порядку">🤝</span>
               )}
             </div>
+            {isDebt && onQuickPay && (
+              <button
+                onClick={() => onQuickPay(child.id, teacher.id, debtCount, debtUah)}
+                className="mt-1 flex items-center gap-1 text-xs text-primary font-medium hover:bg-accent px-2 py-1 rounded-md transition-colors -mx-1"
+              >
+                <Zap size={11} />
+                Оплатити
+              </button>
+            )}
           </div>
         );
       })}
