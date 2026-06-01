@@ -57,7 +57,7 @@ export function LessonChart({ period, date }: LessonChartProps) {
   const xInterval = period === 'month' ? 4 : 0;
 
   return (
-    <Card className="col-span-2">
+    <Card className="col-span-2 h-full flex flex-col">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
         <CardTitle className="text-sm font-semibold text-muted-foreground">Динаміка уроків</CardTitle>
         <div className="flex items-center gap-3">
@@ -69,11 +69,11 @@ export function LessonChart({ period, date }: LessonChartProps) {
           ))}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col min-h-0 pb-4">
         {isLoading ? (
-          <div className="h-48 bg-gray-100 rounded animate-pulse" />
+          <div className="flex-1 bg-gray-100 rounded animate-pulse" />
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={xInterval} />

@@ -124,8 +124,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Bottom row: chart (2/3) + country breakdown (1/3) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2 overflow-x-auto">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+        <div className="md:col-span-2 overflow-x-auto flex flex-col">
           <LessonChart period={period} date={dateParam} />
         </div>
         <ChildrenByCountry />
