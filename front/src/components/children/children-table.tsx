@@ -134,6 +134,7 @@ function SortButton({
   const Icon = isActive && dir === 'asc' ? ArrowUp : isActive && dir === 'desc' ? ArrowDown : ArrowUpDown;
   return (
     <button
+      type="button"
       onClick={() => onToggle(colKey)}
       className="flex items-center gap-1 transition-colors hover:opacity-80"
     >

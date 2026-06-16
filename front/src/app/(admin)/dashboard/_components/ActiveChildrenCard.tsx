@@ -24,7 +24,7 @@ export function ActiveChildrenCard() {
             )}
             {!!data?.vacation && (
               <p className="text-xs text-amber-600 font-medium mt-0.5">
-                На канікулах: {data.vacation}
+                Не активних: {data.vacation}
               </p>
             )}
             {!!data?.newThisMonth && (

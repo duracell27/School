@@ -67,7 +67,7 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
         isLoading={isLoading}
         subtitles={data ? [
           { label: 'Виплачені комісії', value: formatCurrency(data.payoutsTotal) },
-          { label: 'Профіт', value: formatCurrency(data.earned - data.payoutsTotal) },
+          { label: 'Профіт', value: formatCurrency(data.netProfit) },
         ] : undefined}
       />
       <SummaryCard

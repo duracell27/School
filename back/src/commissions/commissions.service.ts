@@ -100,7 +100,7 @@ export class CommissionsService {
   async getPayouts(teacherId: string) {
     return this.prisma.teacherPayout.findMany({
       where: { teacherId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ paidAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
       select: {
         id: true, amount: true, notes: true, paidAt: true, createdAt: true,
         admin: { select: { id: true, name: true } },
