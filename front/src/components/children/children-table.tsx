@@ -169,9 +169,14 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
               <div className="flex items-start gap-2 min-w-0">
                 <ChildAvatar name={child.name} avatar={child.avatar} size={36} />
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     <span className="text-sm font-semibold leading-tight">{child.name}</span>
                     <span>{flag}</span>
+                    {child.status && child.status !== 'STUDYING' && (
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_CLASS[child.status]}`}>
+                        {STATUS_LABEL[child.status]}
+                      </span>
+                    )}
                   </div>
                   {child.subjects.length > 0 && (
                     <p className="text-xs text-gray-500 leading-tight">

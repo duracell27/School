@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCreatePayout, useUpdatePayout } from '@/lib/commissions';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { TeacherPayout } from '@/types/commission';
 
 interface Props {
@@ -81,12 +82,7 @@ export function PayoutModal({ teacherId, teacherName, open, onClose, payout }: P
           </div>
           <div className="space-y-1.5">
             <Label>Дата виплати</Label>
-            <input
-              type="date"
-              className="w-full rounded-md border border-input px-3 py-2 text-sm"
-              value={paidAt}
-              onChange={e => setPaidAt(e.target.value)}
-            />
+            <DatePicker value={paidAt} onChange={setPaidAt} />
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Скасувати</Button>

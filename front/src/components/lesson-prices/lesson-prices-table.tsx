@@ -41,7 +41,7 @@ function SortButton({
   const isActive = activeKey === colKey;
   const Icon = isActive && dir === 'asc' ? ArrowUp : isActive && dir === 'desc' ? ArrowDown : ArrowUpDown;
   return (
-    <button onClick={() => onToggle(colKey)} className="flex items-center gap-1 transition-colors hover:opacity-80">
+    <button type="button" onClick={() => onToggle(colKey)} className="flex items-center gap-1 transition-colors hover:opacity-80">
       {label} <Icon size={13} className={isActive ? 'opacity-100' : 'opacity-40'} />
     </button>
   );
@@ -144,7 +144,7 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
                     : <span className="text-gray-400 text-sm">—</span>}
                 </TableCell>
                 <TableCell>{Number(p.price).toLocaleString('uk-UA')}</TableCell>
-                <TableCell>{new Date(p.effectiveDate).toLocaleDateString('uk-UA')}</TableCell>
+                <TableCell>{p.effectiveDate ? new Date(p.effectiveDate).toLocaleDateString('uk-UA') : '—'}</TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button variant="outline" size="sm" onClick={() => onEdit(p)}>Редагувати</Button>
                   <Button variant="destructive" size="sm" onClick={() => onDelete(p)}>Видалити</Button>

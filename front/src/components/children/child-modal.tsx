@@ -23,7 +23,7 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import { DEFAULT_COUNTRY } from '@/lib/countries';
 import { CountrySelect } from './country-select';
 import { ChildAvatar } from './child-avatar';
-import type { Child } from '@/types/child';
+import type { Child, ChildStatus } from '@/types/child';
 import { DatePicker } from '@/components/ui/date-picker';
 
 const TIMEZONES = [
@@ -55,7 +55,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [country, setCountry] = useState(DEFAULT_COUNTRY);
   const [timezone, setTimezone] = useState('+2');
-  const [status, setStatus] = useState<'STUDYING' | 'VACATION' | 'PAUSED'>('STUDYING');
+  const [status, setStatus] = useState<ChildStatus>('STUDYING');
   const [momPhone, setMomPhone] = useState('');
   const [dadPhone, setDadPhone] = useState('');
   const [showDad, setShowDad] = useState(false);
@@ -88,7 +88,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
       setAvatarUrl(child.avatar ?? null);
       setCountry(child.country);
       setTimezone(child.timezone);
-      setStatus((child.status ?? 'STUDYING') as 'STUDYING' | 'VACATION' | 'PAUSED');
+      setStatus((child.status ?? 'STUDYING') as ChildStatus);
       const mom = child.parentContacts.find((c) => c.label === 'Мама');
       const dad = child.parentContacts.find((c) => c.label === 'Тато');
       setMomPhone(mom?.phone ?? '');
@@ -220,7 +220,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
 
           <div className="space-y-1">
             <Label>Статус</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as 'STUDYING' | 'VACATION' | 'PAUSED')}>
+            <Select value={status} onValueChange={(v) => setStatus(v as ChildStatus)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

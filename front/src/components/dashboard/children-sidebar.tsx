@@ -60,7 +60,7 @@ function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility, statu
           <span className="text-sm leading-tight shrink-0">{flag}</span>
           <span className="text-sm font-semibold truncate leading-tight">{child.name}</span>
         </div>
-        {(child.subjects.length > 0 || weekStatuses.length > 0) && (
+        {(child.subjects.length > 0 || weekStatuses.length > 0 || !!statusLabel) && (
           <div className="flex items-center gap-1 mt-0.5">
             {[...new Set(child.subjects.map((s) => s.subject))].map((s) => (
               <span key={s} className="text-xs leading-none">{subjectEmoji(s)}</span>
