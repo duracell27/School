@@ -7,8 +7,10 @@ import {
   IsDateString,
   Min,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ChildStatus } from '@prisma/client';
 
 export class ParentContactDto {
   @IsString()
@@ -55,4 +57,8 @@ export class CreateChildDto {
   @IsString()
   @IsNotEmpty()
   timezone: string;
+
+  @IsEnum(ChildStatus)
+  @IsOptional()
+  status?: ChildStatus;
 }

@@ -15,6 +15,7 @@ const childSelect = {
   graduationDate: true,
   parentContacts: true,
   timezone: true,
+  status: true,
   subjects: {
     select: {
       id: true,
