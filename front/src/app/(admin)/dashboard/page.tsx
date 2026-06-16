@@ -62,12 +62,12 @@ function SummaryCards({ period, date }: { period: Period; date: string }) {
     <>
       <SummaryCard
         title="Зароблено"
-        amount={data?.netProfit}
+        amount={data?.earned}
         delta={data?.earnedDelta}
         isLoading={isLoading}
         subtitles={data ? [
-          { label: 'Загальна сума', value: formatCurrency(data.earned) },
           { label: 'Виплачені комісії', value: formatCurrency(data.payoutsTotal) },
+          { label: 'Профіт', value: formatCurrency(data.earned - data.payoutsTotal) },
         ] : undefined}
       />
       <SummaryCard
