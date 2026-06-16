@@ -248,26 +248,27 @@ export class DashboardService {
       ? { subjects: { some: { teacherId: userId } } }
       : {};
 
-    const activeWhere: Prisma.ChildWhereInput = {
-      ...subjectFilter,
-      OR: [{ graduationDate: null }, { graduationDate: { gt: now } }],
-    };
-
-    const [active, newThisMonth, byCountryRaw] = await Promise.all([
-      this.prisma.child.count({ where: activeWhere }),
+    const [studying, vacation, total, newThisMonth, byCountryRaw] = await Promise.all([
+      this.prisma.child.count({ where: { ...subjectFilter, status: 'STUDYING' } }),
+      this.prisma.child.count({
+        where: { ...subjectFilter, status: { in: ['VACATION', 'PAUSED'] } },
+      }),
+      this.prisma.child.count({ where: subjectFilter }),
       this.prisma.child.count({
         where: { ...subjectFilter, hireDate: { gte: monthStart } },
       }),
       this.prisma.child.groupBy({
         by: ['country'],
-        where: activeWhere,
+        where: { ...subjectFilter, status: 'STUDYING' },
         _count: { country: true },
         orderBy: { _count: { country: 'desc' } },
       }),
     ]);
 
     return {
-      active,
+      active: studying,
+      vacation,
+      total,
       newThisMonth,
       byCountry: byCountryRaw.map((r) => ({ country: r.country, count: r._count.country })),
     };
