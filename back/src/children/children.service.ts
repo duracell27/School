@@ -102,6 +102,7 @@ export class ChildrenService {
   }
 
   async getStats(childId: string) {
+    await this.findOne(childId);   // throws NotFoundException if not found
     const lessons = await this.prisma.lesson.findMany({
       where: { childId, status: 'CONDUCTED' },
       select: { startDate: true, price: true },
@@ -117,11 +118,11 @@ export class ChildrenService {
       const now = new Date();
       const monthsDiff =
         (now.getFullYear() - first.getFullYear()) * 12 +
-        (now.getMonth() - first.getMonth()) + 1;
+        (now.getMonth() - first.getMonth());
       const months = Math.max(1, monthsDiff);
       avgPerMonth = Math.round((totalLessons / months) * 10) / 10;
     }
 
-    return { totalLessons, avgPerMonth, totalEarned };
+    return { totalLessons, avgPerMonth, totalEarned: Math.round(totalEarned * 100) / 100 };
   }
 }
