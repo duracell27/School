@@ -29,6 +29,12 @@ enum LessonStatus {
   RESCHEDULED
 }
 
+enum ChildStatus {
+  STUDYING
+  VACATION
+  PAUSED
+}
+
 enum CancellationSide {
   STUDENT
   TEACHER
@@ -71,6 +77,7 @@ model Child {
   graduationDate DateTime?
   parentContacts Json          @default("[]")
   timezone       String
+  status         ChildStatus   @default(STUDYING)
   lessons        Lesson[]
   lessonPrices   LessonPrice[]
   payments       Payment[]
@@ -247,6 +254,7 @@ model TeacherPayout {
   adminId           String
   admin             User               @relation("TeacherPayoutAdmin", fields: [adminId], references: [id], onDelete: Restrict)
   notes             String?
+  paidAt            DateTime?
   schoolTransaction SchoolTransaction?
   createdAt         DateTime           @default(now())
 
