@@ -33,6 +33,8 @@ export interface NextLesson {
 
 export interface ChildrenStats {
   active: number;
+  vacation: number;
+  total: number;
   newThisMonth: number;
   byCountry: { country: string; count: number }[];
 }

@@ -10,6 +10,7 @@ export interface TeacherPayout {
   teacherId: string;
   amount: string;
   notes: string | null;
+  paidAt: string | null;
   createdAt: string;
   admin: { id: string; name: string };
 }
@@ -44,9 +45,11 @@ export interface CreatePayoutPayload {
   teacherId: string;
   amount: string;
   notes?: string;
+  paidAt?: string;
 }
 
 export interface UpdatePayoutPayload {
   amount?: string;
   notes?: string;
+  paidAt?: string;
 }

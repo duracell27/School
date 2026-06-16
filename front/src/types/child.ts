@@ -1,3 +1,5 @@
+export type ChildStatus = 'STUDYING' | 'VACATION' | 'PAUSED';
+
 export interface ParentContact {
   label: string;
   phone: string;
@@ -19,6 +21,7 @@ export interface Child {
   graduationDate: string | null;
   parentContacts: ParentContact[];
   timezone: string;
+  status: ChildStatus;
   subjects: ChildSubject[];
   createdAt: string;
   updatedAt: string;
@@ -33,6 +36,7 @@ export interface CreateChildPayload {
   graduationDate?: string;
   parentContacts?: ParentContact[];
   timezone: string;
+  status?: ChildStatus;
 }
 
 export interface UpdateChildPayload {
@@ -44,4 +48,5 @@ export interface UpdateChildPayload {
   graduationDate?: string;
   parentContacts?: ParentContact[];
   timezone?: string;
+  status?: ChildStatus;
 }

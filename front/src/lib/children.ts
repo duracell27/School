@@ -65,3 +65,17 @@ export function useRemoveSubject() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['children'] }),
   });
 }
+
+export interface ChildStats {
+  totalLessons: number;
+  avgPerMonth: number;
+  totalEarned: number;
+}
+
+export function useChildStats(childId: string) {
+  return useQuery({
+    queryKey: ['children', childId, 'stats'],
+    queryFn: () => apiFetch<ChildStats>(`/children/${childId}/stats`),
+    enabled: !!childId,
+  });
+}
