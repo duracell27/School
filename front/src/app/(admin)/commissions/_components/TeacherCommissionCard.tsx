@@ -102,7 +102,7 @@ export function TeacherCommissionCard({ teacher }: Props) {
           ) : (
             payouts.map(p => (
               <div key={p.id} className="flex items-center gap-2 text-xs text-gray-600 py-0.5">
-                <span className="text-gray-400 w-20 shrink-0">{fmtDate(p.createdAt)}</span>
+                <span className="text-gray-400 w-20 shrink-0">{fmtDate(p.paidAt ?? p.createdAt)}</span>
                 <span className="font-medium w-20 shrink-0">{formatCurrency(Number(p.amount))}</span>
                 {p.notes && (
                   <span className="text-gray-400 truncate flex-1">{p.notes}</span>

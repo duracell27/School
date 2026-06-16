@@ -20,6 +20,7 @@ export function PayoutModal({ teacherId, teacherName, open, onClose, payout }: P
   const isEdit = !!payout;
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [paidAt, setPaidAt] = useState('');
   const createPayout = useCreatePayout();
   const updatePayout = useUpdatePayout();
   const isPending = createPayout.isPending || updatePayout.isPending;
@@ -29,9 +30,11 @@ export function PayoutModal({ teacherId, teacherName, open, onClose, payout }: P
     if (open) {
       setAmount(payout ? String(Number(payout.amount)) : '');
       setNotes(payout?.notes ?? '');
+      setPaidAt(payout?.paidAt ? payout.paidAt.slice(0, 10) : new Date().toISOString().slice(0, 10));
     } else {
       setAmount('');
       setNotes('');
+      setPaidAt('');
     }
   }, [open, payout]);
 
@@ -39,12 +42,12 @@ export function PayoutModal({ teacherId, teacherName, open, onClose, payout }: P
     if (!amount) return;
     if (isEdit) {
       updatePayout.mutate(
-        { id: payout!.id, data: { amount, notes: notes || undefined } },
+        { id: payout!.id, data: { amount, notes: notes || undefined, paidAt: paidAt || undefined } },
         { onSuccess: onClose },
       );
     } else {
       createPayout.mutate(
-        { teacherId, amount, notes: notes || undefined },
+        { teacherId, amount, notes: notes || undefined, paidAt: paidAt || undefined },
         { onSuccess: onClose },
       );
     }
@@ -74,6 +77,15 @@ export function PayoutModal({ teacherId, teacherName, open, onClose, payout }: P
               placeholder="Необов'язково"
               value={notes}
               onChange={e => setNotes(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Дата виплати</Label>
+            <input
+              type="date"
+              className="w-full rounded-md border border-input px-3 py-2 text-sm"
+              value={paidAt}
+              onChange={e => setPaidAt(e.target.value)}
             />
           </div>
           <div className="flex justify-end gap-2">
