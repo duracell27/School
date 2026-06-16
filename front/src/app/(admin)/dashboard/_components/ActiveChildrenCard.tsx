@@ -17,6 +17,16 @@ export function ActiveChildrenCard() {
         ) : (
           <>
             <p className="text-2xl font-bold">{data?.active ?? 0}</p>
+            {!!data?.total && data.total !== data.active && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Всього: {data.total}
+              </p>
+            )}
+            {!!data?.vacation && (
+              <p className="text-xs text-amber-600 font-medium mt-0.5">
+                На канікулах: {data.vacation}
+              </p>
+            )}
             {!!data?.newThisMonth && (
               <p className="text-xs text-emerald-600 font-medium mt-1">
                 +{data.newThisMonth} цього місяця
