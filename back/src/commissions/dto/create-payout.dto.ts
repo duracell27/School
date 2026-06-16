@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsDecimal } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsDecimal, IsDateString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreatePayoutDto {
@@ -9,4 +9,6 @@ export class CreatePayoutDto {
   amount: string;
 
   @IsString() @IsOptional() notes?: string;
+
+  @IsDateString() @IsOptional() paidAt?: string;
 }

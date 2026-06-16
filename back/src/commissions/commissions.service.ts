@@ -44,9 +44,12 @@ export class CommissionsService {
           amount: new Prisma.Decimal(dto.amount),
           notes: dto.notes,
           adminId,
+          paidAt: dto.paidAt ? new Date(dto.paidAt) : null,
         },
-        select: { id: true, teacherId: true, amount: true, notes: true, createdAt: true,
-                  admin: { select: { id: true, name: true } } },
+        select: {
+          id: true, teacherId: true, amount: true, notes: true, paidAt: true, createdAt: true,
+          admin: { select: { id: true, name: true } },
+        },
       });
       await tx.schoolTransaction.create({
         data: {
@@ -70,9 +73,12 @@ export class CommissionsService {
         data: {
           ...(dto.amount !== undefined ? { amount: new Prisma.Decimal(dto.amount) } : {}),
           ...(dto.notes !== undefined ? { notes: dto.notes || null } : {}),
+          ...(dto.paidAt !== undefined ? { paidAt: dto.paidAt ? new Date(dto.paidAt) : null } : {}),
         },
-        select: { id: true, amount: true, notes: true, createdAt: true,
-                  admin: { select: { id: true, name: true } } },
+        select: {
+          id: true, amount: true, notes: true, paidAt: true, createdAt: true,
+          admin: { select: { id: true, name: true } },
+        },
       });
       if (dto.amount !== undefined) {
         await tx.schoolTransaction.updateMany({
@@ -96,7 +102,7 @@ export class CommissionsService {
       where: { teacherId },
       orderBy: { createdAt: 'desc' },
       select: {
-        id: true, amount: true, notes: true, createdAt: true,
+        id: true, amount: true, notes: true, paidAt: true, createdAt: true,
         admin: { select: { id: true, name: true } },
       },
     });
