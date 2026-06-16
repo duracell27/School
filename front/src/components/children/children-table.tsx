@@ -10,12 +10,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown, BookOpen } from 'lucide-react';
+import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown, BookOpen, Pencil, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChildAvatar } from './child-avatar';
 import { ChildStatsPopover } from './child-stats-popover';
 import { getCountry } from '@/lib/countries';
 import { subjectEmoji, subjectLabel } from '@/lib/subjects';
-import type { Child } from '@/types/child';
+import { useUpdateChild } from '@/lib/children';
+import type { Child, ChildStatus } from '@/types/child';
 
 interface ChildrenTableProps {
   children: Child[];
@@ -143,6 +145,25 @@ function SortButton({
   );
 }
 
+function InlineStatusSelect({ child }: { child: Child }) {
+  const updateChild = useUpdateChild();
+  return (
+    <Select
+      value={child.status ?? 'STUDYING'}
+      onValueChange={(v) => updateChild.mutate({ id: child.id, data: { status: v as ChildStatus } })}
+    >
+      <SelectTrigger className={`h-7 w-28 text-xs font-medium border-0 px-2 ${STATUS_CLASS[child.status ?? 'STUDYING']}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="STUDYING">Вчиться</SelectItem>
+        <SelectItem value="VACATION">Канікули</SelectItem>
+        <SelectItem value="PAUSED">На паузі</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: ChildrenTableProps) {
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
@@ -191,14 +212,14 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
               </div>
               <div className="flex items-center gap-1 shrink-0">
                 <ChildStatsPopover childId={child.id} childName={child.name} />
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onManageSubjects(child)}>
+                <Button size="sm" variant="outline" className="h-7 px-2" title="Предмети" onClick={() => onManageSubjects(child)}>
                   <BookOpen size={12} />
                 </Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(child)}>
-                  Ред.
+                <Button size="sm" variant="outline" className="h-7 px-2" title="Редагувати" onClick={() => onEdit(child)}>
+                  <Pencil size={12} />
                 </Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(child)}>
-                  Вид.
+                <Button size="sm" variant="outline" className="h-7 px-2 text-red-500 border-red-200" title="Видалити" onClick={() => onDelete(child)}>
+                  <Trash2 size={12} />
                 </Button>
               </div>
             </div>
@@ -312,21 +333,21 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_CLASS[child.status ?? 'STUDYING']}`}>
-                      {STATUS_LABEL[child.status ?? 'STUDYING']}
-                    </span>
+                    <InlineStatusSelect child={child} />
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <ChildStatsPopover childId={child.id} childName={child.name} />
-                    <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
-                      <BookOpen size={14} />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => onEdit(child)}>
-                      Редагувати
-                    </Button>
-                    <Button variant="destructive" size="sm" onClick={() => onDelete(child)}>
-                      Видалити
-                    </Button>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <ChildStatsPopover childId={child.id} childName={child.name} />
+                      <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
+                        <BookOpen size={14} />
+                      </Button>
+                      <Button variant="outline" size="sm" title="Редагувати" onClick={() => onEdit(child)}>
+                        <Pencil size={14} />
+                      </Button>
+                      <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50" title="Видалити" onClick={() => onDelete(child)}>
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               );

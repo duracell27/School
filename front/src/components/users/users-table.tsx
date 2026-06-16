@@ -11,7 +11,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from './user-avatar';
-import { UserPlus, UserMinus } from 'lucide-react';
+import { UserPlus, UserMinus, Pencil, Trash2 } from 'lucide-react';
 import type { User } from '@/types/user';
 
 interface UsersTableProps {
@@ -46,11 +46,11 @@ export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(user)}>
-                Ред.
+              <Button size="sm" variant="outline" className="h-7 px-2" title="Редагувати" onClick={() => onEdit(user)}>
+                <Pencil size={12} />
               </Button>
-              <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(user)}>
-                Вид.
+              <Button size="sm" variant="outline" className="h-7 px-2 text-red-500 border-red-200" title="Видалити" onClick={() => onDelete(user)}>
+                <Trash2 size={12} />
               </Button>
             </div>
           </div>
@@ -103,13 +103,15 @@ export function UsersTable({ users, onEdit, onDelete }: UsersTableProps) {
                     </span>
                   </div>
                 </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
-                    Редагувати
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => onDelete(user)}>
-                    Видалити
-                  </Button>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="outline" size="sm" title="Редагувати" onClick={() => onEdit(user)}>
+                      <Pencil size={14} />
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50" title="Видалити" onClick={() => onDelete(user)}>
+                      <Trash2 size={14} />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { getCountry } from '@/lib/countries';
@@ -94,8 +94,8 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
                 <p className="text-xs text-gray-400">Діє з: {effectiveFrom}</p>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(p)}>Ред.</Button>
-                <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(p)}>Вид.</Button>
+                <Button size="sm" variant="outline" className="h-7 px-2" title="Редагувати" onClick={() => onEdit(p)}><Pencil size={12} /></Button>
+                <Button size="sm" variant="outline" className="h-7 px-2 text-red-500 border-red-200" title="Видалити" onClick={() => onDelete(p)}><Trash2 size={12} /></Button>
               </div>
             </div>
           );
@@ -145,9 +145,11 @@ export function LessonPricesTable({ prices, onEdit, onDelete }: LessonPricesTabl
                 </TableCell>
                 <TableCell>{Number(p.price).toLocaleString('uk-UA')}</TableCell>
                 <TableCell>{p.effectiveDate ? new Date(p.effectiveDate).toLocaleDateString('uk-UA') : '—'}</TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => onEdit(p)}>Редагувати</Button>
-                  <Button variant="destructive" size="sm" onClick={() => onDelete(p)}>Видалити</Button>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="outline" size="sm" title="Редагувати" onClick={() => onEdit(p)}><Pencil size={14} /></Button>
+                    <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50" title="Видалити" onClick={() => onDelete(p)}><Trash2 size={14} /></Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

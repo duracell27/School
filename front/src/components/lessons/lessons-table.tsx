@@ -8,7 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, ArrowUp, ArrowDown, FileText } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, FileText, Pencil, Trash2 } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { getCountry } from '@/lib/countries';
@@ -251,11 +251,11 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                       <FileText size={12} />
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(lesson)}>
-                    Ред.
+                  <Button size="sm" variant="outline" className="h-7 px-2" title="Редагувати" onClick={() => onEdit(lesson)}>
+                    <Pencil size={12} />
                   </Button>
-                  <Button size="sm" variant="outline" className="h-7 px-2 text-xs text-red-500 border-red-200" onClick={() => onDelete(lesson)}>
-                    Вид.
+                  <Button size="sm" variant="outline" className="h-7 px-2 text-red-500 border-red-200" title="Видалити" onClick={() => onDelete(lesson)}>
+                    <Trash2 size={12} />
                   </Button>
                 </div>
               </div>
@@ -374,8 +374,8 @@ export function LessonsTable({ lessons, onEdit, onDelete }: LessonsTableProps) {
                       <FileText size={14} className="mr-1" /> Причина
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => onEdit(lesson)}>Редагувати</Button>
-                  <Button variant="destructive" size="sm" onClick={() => onDelete(lesson)}>Видалити</Button>
+                  <Button variant="outline" size="sm" title="Редагувати" onClick={() => onEdit(lesson)}><Pencil size={14} /></Button>
+                  <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50" title="Видалити" onClick={() => onDelete(lesson)}><Trash2 size={14} /></Button>
                 </TableCell>
               </TableRow>
             ))}

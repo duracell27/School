@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Pencil, Trash2 } from 'lucide-react';
 import { ChildAvatar } from '@/components/children/child-avatar';
 import { UserAvatar } from '@/components/users/user-avatar';
 import { getCountry } from '@/lib/countries';
@@ -97,15 +97,16 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onEdit(payment)}>
-                Ред.
+              <Button size="sm" variant="outline" className="h-7 px-2" title="Редагувати" onClick={() => onEdit(payment)}>
+                <Pencil size={12} />
               </Button>
               <Button
                 size="sm" variant="outline"
-                className="h-7 px-2 text-xs text-red-500 border-red-200"
+                className="h-7 px-2 text-red-500 border-red-200"
+                title="Видалити"
                 onClick={() => setConfirmId(payment.id)}
               >
-                Вид.
+                <Trash2 size={12} />
               </Button>
             </div>
           </div>
@@ -147,15 +148,19 @@ export function PaymentsTable({ payments, onEdit }: PaymentsTableProps) {
               </TableCell>
               <TableCell className="font-medium tabular-nums">{formatCurrency(Number(payment.amount))}</TableCell>
               <TableCell className="text-sm text-gray-500 max-w-32 truncate">{payment.notes ?? '—'}</TableCell>
-              <TableCell className="text-right space-x-2">
-                <Button variant="outline" size="sm" onClick={() => onEdit(payment)}>Редагувати</Button>
-                <Button
-                  variant="destructive" size="sm"
-                  onClick={() => setConfirmId(payment.id)}
-                  disabled={deletePayment.isPending}
-                >
-                  Видалити
-                </Button>
+              <TableCell className="text-right">
+                <div className="flex items-center justify-end gap-1">
+                  <Button variant="outline" size="sm" title="Редагувати" onClick={() => onEdit(payment)}><Pencil size={14} /></Button>
+                  <Button
+                    variant="outline" size="sm"
+                    className="text-red-500 border-red-200 hover:bg-red-50"
+                    title="Видалити"
+                    onClick={() => setConfirmId(payment.id)}
+                    disabled={deletePayment.isPending}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );
