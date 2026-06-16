@@ -29,9 +29,10 @@ interface DraggableChildProps {
   weekStatuses: string[];
   hidden: boolean;
   onToggleVisibility: () => void;
+  statusLabel?: string;
 }
 
-function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility }: DraggableChildProps) {
+function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility, statusLabel }: DraggableChildProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `child-${child.id}`,
     data: { type: 'child', child },
@@ -64,6 +65,9 @@ function DraggableChild({ child, weekStatuses, hidden, onToggleVisibility }: Dra
             {[...new Set(child.subjects.map((s) => s.subject))].map((s) => (
               <span key={s} className="text-xs leading-none">{subjectEmoji(s)}</span>
             ))}
+            {statusLabel && (
+              <span className="text-[10px] text-amber-600 font-medium ml-auto">{statusLabel}</span>
+            )}
             {weekStatuses.map((status, i) => (
               <span
                 key={i}
@@ -101,7 +105,6 @@ interface ChildrenSidebarProps {
 
 export function ChildrenSidebar({ childList, lessons, duration, onDurationChange, hiddenChildIds, onToggleChild, onToggleAll }: ChildrenSidebarProps) {
   const [search, setSearch] = useState('');
-  const allHidden = childList.length > 0 && hiddenChildIds.size >= childList.length;
 
   const childWeekStatuses = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -113,11 +116,17 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
     return map;
   }, [lessons]);
 
-  const visibleChildren = useMemo(() => {
+  const { activeChildren, inactiveChildren } = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return childList;
-    return childList.filter((c) => c.name.toLowerCase().includes(q));
+    const filtered = q ? childList.filter((c) => c.name.toLowerCase().includes(q)) : childList;
+    return {
+      activeChildren: filtered.filter((c) => !c.status || c.status === 'STUDYING'),
+      inactiveChildren: filtered.filter((c) => c.status === 'VACATION' || c.status === 'PAUSED'),
+    };
   }, [childList, search]);
+
+  const allChildren = [...activeChildren, ...inactiveChildren];
+  const allHidden = allChildren.length > 0 && hiddenChildIds.size >= allChildren.length;
 
   return (
     <div className="w-48 shrink-0 flex flex-col gap-2 border rounded-lg bg-card p-2">
@@ -161,18 +170,38 @@ export function ChildrenSidebar({ childList, lessons, duration, onDurationChange
 
       {/* Children list */}
       <div className="flex-1 overflow-y-auto space-y-0.5 min-h-0">
-        {visibleChildren.length === 0 ? (
+        {activeChildren.length === 0 && inactiveChildren.length === 0 ? (
           <p className="text-xs text-gray-400 px-2 py-2">Немає учнів</p>
         ) : (
-          visibleChildren.map((child) => (
-            <DraggableChild
-              key={child.id}
-              child={child}
-              weekStatuses={childWeekStatuses.get(child.id) ?? []}
-              hidden={hiddenChildIds.has(child.id)}
-              onToggleVisibility={() => onToggleChild(child.id)}
-            />
-          ))
+          <>
+            {activeChildren.map((child) => (
+              <DraggableChild
+                key={child.id}
+                child={child}
+                weekStatuses={childWeekStatuses.get(child.id) ?? []}
+                hidden={hiddenChildIds.has(child.id)}
+                onToggleVisibility={() => onToggleChild(child.id)}
+              />
+            ))}
+            {inactiveChildren.length > 0 && (
+              <>
+                <div className="px-2 pt-1.5 pb-0.5">
+                  <div className="h-px bg-border" />
+                </div>
+                {inactiveChildren.map((child) => (
+                  <div key={child.id} className="rounded-lg bg-amber-50/60">
+                    <DraggableChild
+                      child={child}
+                      weekStatuses={childWeekStatuses.get(child.id) ?? []}
+                      hidden={hiddenChildIds.has(child.id)}
+                      onToggleVisibility={() => onToggleChild(child.id)}
+                      statusLabel={child.status === 'VACATION' ? 'канікули 🏖️' : 'пауза ⏸️'}
+                    />
+                  </div>
+                ))}
+              </>
+            )}
+          </>
         )}
       </div>
     </div>
