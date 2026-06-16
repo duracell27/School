@@ -55,6 +55,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [country, setCountry] = useState(DEFAULT_COUNTRY);
   const [timezone, setTimezone] = useState('+2');
+  const [status, setStatus] = useState<'STUDYING' | 'VACATION' | 'PAUSED'>('STUDYING');
   const [momPhone, setMomPhone] = useState('');
   const [dadPhone, setDadPhone] = useState('');
   const [showDad, setShowDad] = useState(false);
@@ -87,6 +88,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
       setAvatarUrl(child.avatar ?? null);
       setCountry(child.country);
       setTimezone(child.timezone);
+      setStatus((child.status ?? 'STUDYING') as 'STUDYING' | 'VACATION' | 'PAUSED');
       const mom = child.parentContacts.find((c) => c.label === 'Мама');
       const dad = child.parentContacts.find((c) => c.label === 'Тато');
       setMomPhone(mom?.phone ?? '');
@@ -97,6 +99,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
       setAvatarUrl(null);
       setCountry(DEFAULT_COUNTRY);
       setTimezone('+2');
+      setStatus('STUDYING');
       setMomPhone('');
       setDadPhone('');
       setShowDad(false);
@@ -131,6 +134,7 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
         age: data.age,
         country,
         timezone,
+        status,
         parentContacts,
         ...(avatarUrl ? { avatar: avatarUrl } : {}),
         ...(data.hireDate ? { hireDate: data.hireDate } : {}),
@@ -212,6 +216,20 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Статус</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as 'STUDYING' | 'VACATION' | 'PAUSED')}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="STUDYING">Вчиться</SelectItem>
+                <SelectItem value="VACATION">Канікули</SelectItem>
+                <SelectItem value="PAUSED">На паузі</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
