@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { UserPlus, UserMinus, ArrowUpDown, ArrowUp, ArrowDown, BookOpen } from 'lucide-react';
 import { ChildAvatar } from './child-avatar';
+import { ChildStatsPopover } from './child-stats-popover';
 import { getCountry } from '@/lib/countries';
 import { subjectEmoji, subjectLabel } from '@/lib/subjects';
 import type { Child } from '@/types/child';
@@ -183,6 +184,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
+                <ChildStatsPopover childId={child.id} childName={child.name} />
                 <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => onManageSubjects(child)}>
                   <BookOpen size={12} />
                 </Button>
@@ -309,6 +311,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                     </span>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
+                    <ChildStatsPopover childId={child.id} childName={child.name} />
                     <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
                       <BookOpen size={14} />
                     </Button>
