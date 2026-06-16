@@ -23,13 +23,25 @@ interface ChildrenTableProps {
   onManageSubjects: (child: Child) => void;
 }
 
-type SortKey = 'name' | 'age' | 'country' | 'teacher' | 'hireDate';
+type SortKey = 'name' | 'age' | 'country' | 'teacher' | 'hireDate' | 'status';
 type SortDir = 'asc' | 'desc' | null;
 
 function formatDate(date: string | null) {
   if (!date) return '—';
   return new Date(date).toLocaleDateString('uk-UA');
 }
+
+const STATUS_LABEL: Record<string, string> = {
+  STUDYING: 'Вчиться',
+  VACATION: 'Канікули',
+  PAUSED: 'На паузі',
+};
+
+const STATUS_CLASS: Record<string, string> = {
+  STUDYING: 'text-emerald-600 bg-emerald-50',
+  VACATION: 'text-amber-600 bg-amber-50',
+  PAUSED: 'text-gray-500 bg-gray-100',
+};
 
 function toTelegramHref(phone: string): string {
   const digits = phone.replace(/\D/g, '');
@@ -94,6 +106,11 @@ function sortChildren(list: Child[], key: SortKey, dir: SortDir): Child[] {
       case 'hireDate':
         cmp = (a.hireDate ?? '').localeCompare(b.hireDate ?? '');
         break;
+      case 'status': {
+        const order = { STUDYING: 0, VACATION: 1, PAUSED: 2 };
+        cmp = (order[a.status ?? 'STUDYING'] ?? 0) - (order[b.status ?? 'STUDYING'] ?? 0);
+        break;
+      }
     }
     return dir === 'asc' ? cmp : -cmp;
   });
@@ -204,6 +221,9 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
               <TableHead>
                 <SortButton label="Дата" colKey="hireDate" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
               </TableHead>
+              <TableHead>
+                <SortButton label="Статус" colKey="status" activeKey={sortKey} dir={sortDir} onToggle={handleSort} />
+              </TableHead>
               <TableHead className="text-right">Дії</TableHead>
             </TableRow>
           </TableHeader>
@@ -283,6 +303,11 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
                       </span>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${STATUS_CLASS[child.status ?? 'STUDYING']}`}>
+                      {STATUS_LABEL[child.status ?? 'STUDYING']}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="outline" size="sm" title="Предмети" onClick={() => onManageSubjects(child)}>
                       <BookOpen size={14} />
@@ -299,7 +324,7 @@ export function ChildrenTable({ children, onEdit, onDelete, onManageSubjects }: 
             })}
             {children.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-gray-400 py-8">
+                <TableCell colSpan={9} className="text-center text-gray-400 py-8">
                   Дітей не знайдено
                 </TableCell>
               </TableRow>
