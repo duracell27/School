@@ -100,4 +100,28 @@ export class ChildrenService {
     if (!record) throw new NotFoundException('Subject assignment not found');
     await this.prisma.childSubject.delete({ where: { id: subjectId } });
   }
+
+  async getStats(childId: string) {
+    const lessons = await this.prisma.lesson.findMany({
+      where: { childId, status: 'CONDUCTED' },
+      select: { startDate: true, price: true },
+      orderBy: { startDate: 'asc' },
+    });
+
+    const totalLessons = lessons.length;
+    const totalEarned = lessons.reduce((sum, l) => sum + Number(l.price), 0);
+
+    let avgPerMonth = 0;
+    if (totalLessons > 0) {
+      const first = new Date(lessons[0].startDate);
+      const now = new Date();
+      const monthsDiff =
+        (now.getFullYear() - first.getFullYear()) * 12 +
+        (now.getMonth() - first.getMonth()) + 1;
+      const months = Math.max(1, monthsDiff);
+      avgPerMonth = Math.round((totalLessons / months) * 10) / 10;
+    }
+
+    return { totalLessons, avgPerMonth, totalEarned };
+  }
 }

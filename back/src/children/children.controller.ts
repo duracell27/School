@@ -39,6 +39,12 @@ export class ChildrenController {
     return this.children.findOne(id);
   }
 
+  @Get(':id/stats')
+  @Roles(Role.ADMIN)
+  getStats(@Param('id') id: string) {
+    return this.children.getStats(id);
+  }
+
   @Patch(':id')
   @Roles(Role.ADMIN)
   update(@Param('id') id: string, @Body() dto: UpdateChildDto) {
