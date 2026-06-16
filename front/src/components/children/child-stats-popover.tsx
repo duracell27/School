@@ -25,7 +25,7 @@ export function ChildStatsPopover({ childId, childName }: ChildStatsPopoverProps
 }
 
 function ChildStatsContent({ childId }: { childId: string }) {
-  const { data, isLoading } = useChildStats(childId);
+  const { data, isLoading, isError } = useChildStats(childId);
 
   if (isLoading) {
     return (
@@ -37,6 +37,7 @@ function ChildStatsContent({ childId }: { childId: string }) {
     );
   }
 
+  if (isError) return <p className="text-xs text-red-400">Помилка завантаження</p>;
   if (!data) return <p className="text-xs text-gray-400">Немає даних</p>;
 
   return (
@@ -48,7 +49,7 @@ function ChildStatsContent({ childId }: { childId: string }) {
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">Сер. на місяць</span>
-        <span className="font-semibold">{data.avgPerMonth}</span>
+        <span className="font-semibold">{data.avgPerMonth.toFixed(1)}</span>
       </div>
       <div className="flex justify-between text-sm">
         <span className="text-gray-500">Зароблено</span>
