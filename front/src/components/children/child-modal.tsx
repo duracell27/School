@@ -222,7 +222,9 @@ export function ChildModal({ open, onClose, child }: ChildModalProps) {
             <Label>Статус</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as ChildStatus)}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {{ STUDYING: 'Вчиться', VACATION: 'Канікули', PAUSED: 'На паузі' }[status]}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="STUDYING">Вчиться</SelectItem>

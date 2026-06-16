@@ -153,7 +153,7 @@ function InlineStatusSelect({ child }: { child: Child }) {
       onValueChange={(v) => updateChild.mutate({ id: child.id, data: { status: v as ChildStatus } })}
     >
       <SelectTrigger className={`h-7 w-28 text-xs font-medium border-0 px-2 ${STATUS_CLASS[child.status ?? 'STUDYING']}`}>
-        <SelectValue />
+        <SelectValue>{STATUS_LABEL[child.status ?? 'STUDYING']}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="STUDYING">Вчиться</SelectItem>
