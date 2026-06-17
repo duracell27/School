@@ -119,7 +119,7 @@ export class ChildrenService {
       const monthsDiff =
         (now.getFullYear() - first.getFullYear()) * 12 +
         (now.getMonth() - first.getMonth());
-      const months = Math.max(1, monthsDiff);
+      const months = Math.max(1, monthsDiff + 1);
       avgPerMonth = Math.round((totalLessons / months) * 10) / 10;
     }
 
