@@ -147,7 +147,12 @@ export class DashboardService {
       }),
       userRole !== Role.TEACHER
         ? this.prisma.teacherPayout.aggregate({
-            where: { createdAt: { gte: start, lt: end } },
+            where: {
+              OR: [
+                { paidAt: { gte: start, lt: end } },
+                { paidAt: null, createdAt: { gte: start, lt: end } },
+              ],
+            },
             _sum: { amount: true },
           })
         : Promise.resolve({ _sum: { amount: null } }),
