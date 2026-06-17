@@ -1,9 +1,23 @@
+import { execFileSync } from 'child_process';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('Running prisma db push...');
+      execFileSync(process.execPath, ['node_modules/prisma/build/index.js', 'db', 'push'], {
+        stdio: 'inherit',
+      });
+      console.log('Prisma db push completed.');
+    } catch (error) {
+      console.error('Prisma db push failed:', error);
+      process.exit(1);
+    }
+  }
+
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   const allowedOrigins = [
